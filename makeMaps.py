@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
+import sys
 import re
+import urllib2
+import gzip
 from mpl_toolkits.basemap import Basemap
 import numpy as numpy
 import matplotlib.pyplot as plt
@@ -49,11 +52,41 @@ class HipEntry(object):
     result = "{0:7} {1:10.4f} {2:10.4f} {3:10.4f} {4:10.4f} {5:10.4f}".format(self.HIP,self.RA,self.DE,self.Plx,self.Vmag,self.BmV)
     return result
 
-def readHip(infileName="hip_main.dat"):
+def readHip(localFn="data/hip_main.dat",url="ftp://cdsarc.u-strasbg.fr/pub/cats/I/239/hip_main.dat.gz"):
   result = []
-  infile = open(infileName)
+  infile = None
+  try:
+    infile = gzip.GzipFile(localFn)
+  except:
+    print "readHip: Couldn't find local data file, attempting to download..."
+    infile = None
+    try:
+      u = urllib2.urlopen(url)
+      infile = open(localFn, 'wb')
+      meta = u.info()
+      file_size = int(meta.getheaders("Content-Length")[0])
+      print "Downloading: %s Bytes: %s" % (url, file_size)
+      
+      file_size_dl = 0
+      block_sz = 8192
+      while True:
+          buffer = u.read(block_sz)
+          if not buffer:
+              break
+          file_size_dl += len(buffer)
+          infile.write(buffer)
+          status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+          status = status + chr(8)*(len(status)+1)
+          print status,
+      infile.close()
+      print "Done downloading %s to %s" % (url, localFn)
+      infile = gzip.GzipFile(localFn)
+    except:
+      print "Error in readHip: Couldn't find local data file and couldn't download"
+      sys.exit(1)
   for row in infile:
     result.append(HipEntry(row))
+  infile.close()
   return result
 
 class NGCEntry(object):
@@ -79,11 +112,41 @@ class NGCEntry(object):
   def getNGC(self):
     return self.NGC
 
-def readNGC(infileName="ngc2000.dat"):
+def readNGC(localFn="data/ngc2000.dat",url="ftp://cdsarc.u-strasbg.fr/pub/cats/VII/118/ngc2000.dat"):
   result = []
-  infile = open(infileName)
+  infile = None
+  try:
+    infile = open(localFn)
+  except:
+    print "readNGC: Couldn't find local data file, attempting to download..."
+    infile = None
+    try:
+      u = urllib2.urlopen(url)
+      infile = open(localFn, 'wb')
+      meta = u.info()
+      file_size = int(meta.getheaders("Content-Length")[0])
+      print "Downloading: %s Bytes: %s" % (url, file_size)
+      
+      file_size_dl = 0
+      block_sz = 8192
+      while True:
+          buffer = u.read(block_sz)
+          if not buffer:
+              break
+          file_size_dl += len(buffer)
+          infile.write(buffer)
+          status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+          status = status + chr(8)*(len(status)+1)
+          print status,
+      infile.close()
+      print "Done downloading %s to %s" % (url, localFn)
+      infile = open(localFn)
+    except:
+      print "Error in readNGC: Couldn't find local data file and couldn't download"
+      sys.exit(1)
   for row in infile:
     result.append(NGCEntry(row))
+  infile.close()
   return result
 
 def drawConstLines(baseMap):
@@ -156,14 +219,14 @@ m.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,True])
 m.drawmeridians(numpy.arange(-180.,181.,60.),labels=[True,True,True])
 mapx,mapy = m(dataArray[:,0],dataArray[:,1])
 m.scatter(mapx,mapy,s=10./numpy.sqrt(dataArray[:,2]),marker=".",c='k',linewidths=0)
-#mapx,mapy = m(ngcGx[:,0],ngcGx[:,1])
-#m.scatter(mapx,mapy,marker=".",c='r',linewidths=0)
-#mapx,mapy = m(ngcOC[:,0],ngcOC[:,1])
-#m.scatter(mapx,mapy,marker=".",c='g',linewidths=0)
-#mapx,mapy = m(ngcGb[:,0],ngcGb[:,1])
-#m.scatter(mapx,mapy,marker=".",c='b',linewidths=0)
-#mapx,mapy = m(ngcNb[:,0],ngcNb[:,1])
-#m.scatter(mapx,mapy,marker=".",c='c',linewidths=0)
+mapx,mapy = m(ngcGx[:,0],ngcGx[:,1])
+m.scatter(mapx,mapy,marker=".",c='r',linewidths=0)
+mapx,mapy = m(ngcOC[:,0],ngcOC[:,1])
+m.scatter(mapx,mapy,marker=".",c='g',linewidths=0)
+mapx,mapy = m(ngcGb[:,0],ngcGb[:,1])
+m.scatter(mapx,mapy,marker=".",c='b',linewidths=0)
+mapx,mapy = m(ngcNb[:,0],ngcNb[:,1])
+m.scatter(mapx,mapy,marker=".",c='c',linewidths=0)
 drawConstLines(m)
 plt.show()
 
