@@ -176,12 +176,68 @@ def drawConstLines(baseMap):
       mapx,mapy = m(star.getRAd(),star.getDEd())
       starXs.append(mapx)
       starYs.append(mapy)
-    m.plot(starXs,starYs,"-m")
+    m.plot(starXs,starYs,"-m",alpha=0.7)
+
+class ConstBoundaries(object):
+  def __init__(self,localFn="data/bound_20.dat",url="ftp://cdsarc.u-strasbg.fr/cats/VI/49/bound_20.dat"):
+    infile = None
+    try:
+      infile = open(localFn)
+    except:
+      print "ConstBoundaries: Couldn't find local data file, attempting to download..."
+      infile = None
+      try:
+        u = urllib2.urlopen(url)
+        infile = open(localFn, 'wb')
+        meta = u.info()
+        file_size = int(meta.getheaders("Content-Length")[0])
+        print "Downloading: %s Bytes: %s" % (url, file_size)
+        
+        file_size_dl = 0
+        block_sz = 8192
+        while True:
+            buffer = u.read(block_sz)
+            if not buffer:
+                break
+            file_size_dl += len(buffer)
+            infile.write(buffer)
+            status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+            status = status + chr(8)*(len(status)+1)
+            print status,
+        infile.close()
+        print "Done downloading %s to %s" % (url, localFn)
+        infile = open(localFn)
+      except:
+        print "Error in ConstBoundaries: Couldn't find local data file and couldn't download"
+        sys.exit(1)
+    constBoundRaw = {}
+    for row in infile:
+        RAh = float(row[0:10])
+        DE = float(row[11:22])
+        cst = row[23:27].strip()
+        #pointType = float(row[28])
+        RA = RAh * 15.
+        if constBoundRaw.has_key(cst):
+            constBoundRaw[cst].append([RA,DE])
+        else:
+            constBoundRaw[cst] = [[RA,DE]]
+    infile.close()
+    self.constBoundRaw = constBoundRaw
+  def draw(self,baseMap):
+    constBoundRaw = self.constBoundRaw
+    for cst in constBoundRaw:
+      mapXs = []
+      mapYs = []
+      for point in constBoundRaw[cst]:
+        mapx,mapy = m(point[0],point[1])
+        mapXs.append(mapx)
+        mapYs.append(mapy)
+      m.plot(mapXs,mapYs,"--c",alpha=0.7)
 
 dataObjs = readHip()
 dataArray = numpy.zeros((len(dataObjs),3))
 for i,hd in enumerate(dataObjs):
-  if hd.getVmag() < 9.:
+  #if hd.getVmag() < 9.:
     dataArray[i][0] = hd.getRA()
     dataArray[i][1] = hd.getDE()
     dataArray[i][2] = hd.getVmag()
@@ -214,6 +270,23 @@ m = Basemap(projection='kav7',lat_0=0,lon_0=0,celestial=True)
 #m = Basemap(projection='nplaea',boundinglat=30,lon_0=0,celestial=True)
 #m = Basemap(projection='splaea',boundinglat=-30,lon_0=0,celestial=True)
 #m = Basemap(projection='cyl',celestial=True)
+#m = Basemap(celestial=True,
+#        #projection="laea",
+#        #projection="lcc",
+#        projection="aeqd",
+#        #projection='stere',
+#        rsphere=1./(2.*numpy.pi),
+#        ## LMC-ish
+#        #width=0.10,
+#        #height=0.1,
+#        #lat_0=-70,
+#        #lon_0=-90,
+#        # Orion-ish
+#        width=0.1,
+#        height=0.1,
+#        lat_0=0,
+#        lon_0=-85,
+#    )
 # draw parallels and meridians.
 m.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,True])
 m.drawmeridians(numpy.arange(-180.,181.,60.),labels=[True,True,True])
@@ -228,6 +301,8 @@ m.scatter(mapx,mapy,marker=".",c='b',linewidths=0)
 mapx,mapy = m(ngcNb[:,0],ngcNb[:,1])
 m.scatter(mapx,mapy,marker=".",c='c',linewidths=0)
 drawConstLines(m)
+cbs = ConstBoundaries()
+cbs.draw(m)
 plt.show()
 
 
