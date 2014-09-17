@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+import re
 from mpl_toolkits.basemap import Basemap
 import numpy as numpy
 import matplotlib.pyplot as plt
+import catalogCrossRef
 
 class HipEntry(object):
   def __init__(self,row):
@@ -84,6 +86,35 @@ def readNGC(infileName="ngc2000.dat"):
     result.append(NGCEntry(row))
   return result
 
+def drawConstLines(baseMap):
+  ccr = catalogCrossRef.CatalogCrossRef()
+  lineFile = open("data/pp3Lines.dat")
+  goodLines = []
+  for l in lineFile:
+    if l[0]=="#" or re.match(r"^\s*$",l):
+        continue
+    l = re.sub(r"#.*","",l)
+    l = l.replace('\n','')
+    goodLines.append(l)
+  lines = " ".join(goodLines).split(";")
+  for line in lines:
+    stars = re.findall(r"([a-zA-Z]+)\s+([0-9]+)",line)
+    #print "line: "
+    starXs = []
+    starYs = []
+    for star in stars:
+      const= star[0]
+      num = int(star[1])
+      if const == "HD":
+        star = ccr.findByHD(num)
+      else:
+        star = ccr.findByFl(const,num)
+      #print " ", const,num,star.getRAd(),star.getDEd()
+      mapx,mapy = m(star.getRAd(),star.getDEd())
+      starXs.append(mapx)
+      starYs.append(mapy)
+    m.plot(starXs,starYs,"-m")
+
 dataObjs = readHip()
 dataArray = numpy.zeros((len(dataObjs),3))
 for i,hd in enumerate(dataObjs):
@@ -116,7 +147,7 @@ ngcNb = numpy.array(ngcNb)
 ## of the map.
 ## resolution = 'c' means use crude resolution coastlines.
 m = Basemap(projection='kav7',lat_0=0,lon_0=0,celestial=True)
-#m = Basemap(projection='robin',lat_0=0,lon_0=90,celestial=True)
+#m = Basemap(projection='robin',lat_0=0,lon_0=0,celestial=True)
 #m = Basemap(projection='nplaea',boundinglat=30,lon_0=0,celestial=True)
 #m = Basemap(projection='splaea',boundinglat=-30,lon_0=0,celestial=True)
 #m = Basemap(projection='cyl',celestial=True)
@@ -125,14 +156,15 @@ m.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,True])
 m.drawmeridians(numpy.arange(-180.,181.,60.),labels=[True,True,True])
 mapx,mapy = m(dataArray[:,0],dataArray[:,1])
 m.scatter(mapx,mapy,s=10./numpy.sqrt(dataArray[:,2]),marker=".",c='k',linewidths=0)
-mapx,mapy = m(ngcGx[:,0],ngcGx[:,1])
-m.scatter(mapx,mapy,marker=".",c='r',linewidths=0)
-mapx,mapy = m(ngcOC[:,0],ngcOC[:,1])
-m.scatter(mapx,mapy,marker=".",c='g',linewidths=0)
-mapx,mapy = m(ngcGb[:,0],ngcGb[:,1])
-m.scatter(mapx,mapy,marker=".",c='b',linewidths=0)
-mapx,mapy = m(ngcNb[:,0],ngcNb[:,1])
-m.scatter(mapx,mapy,marker=".",c='y',linewidths=0)
+#mapx,mapy = m(ngcGx[:,0],ngcGx[:,1])
+#m.scatter(mapx,mapy,marker=".",c='r',linewidths=0)
+#mapx,mapy = m(ngcOC[:,0],ngcOC[:,1])
+#m.scatter(mapx,mapy,marker=".",c='g',linewidths=0)
+#mapx,mapy = m(ngcGb[:,0],ngcGb[:,1])
+#m.scatter(mapx,mapy,marker=".",c='b',linewidths=0)
+#mapx,mapy = m(ngcNb[:,0],ngcNb[:,1])
+#m.scatter(mapx,mapy,marker=".",c='c',linewidths=0)
+drawConstLines(m)
 plt.show()
 
 
