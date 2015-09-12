@@ -1,8 +1,11 @@
 ## Taken from pp3 http://pp3.sourceforge.net/
 ## Copyright (c) 2003, 2004 Torsten Bronger bronger@users.sourceforge.net
+## Modified by Justin Hugon
 ORI 19  ORI 34  ORI 24 ;
 ORI 53  ORI 50  ORI 46  ORI 34 ;
 ORI 50  ORI 58 ;
+ORI 58  ORI 24  ORI 39  ORI 58 ;
+#ORI 58  ORI 70  ORI 62  ORI 54  ORI 67 ;
 
 PER 44  PER 45  PER 39  PER 33  PER 23 ;
 PER 33  PER 26 ;

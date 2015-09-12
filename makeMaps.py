@@ -29,7 +29,10 @@ class HipEntry(object):
     return self.HIP
 
   def getRA(self):
-    return self.RA
+    result = self.RA
+    if result > 180.:
+      result -= 360.
+    return result
 
   def getDE(self):
     return self.DE
@@ -101,7 +104,10 @@ class NGCEntry(object):
     self.RA *= 15. # convert RA from hours to degrees
 
   def getRA(self):
-    return self.RA
+    result = self.RA
+    if result > 180.:
+      result -= 360.
+    return result
 
   def getDE(self):
     return self.DE
@@ -173,7 +179,11 @@ def drawConstLines(baseMap):
       else:
         star = ccr.findByFl(const,num)
       #print " ", const,num,star.getRAd(),star.getDEd()
-      mapx,mapy = m(star.getRAd(),star.getDEd())
+      ra = star.getRAd()
+      if ra > 180.:
+        ra -= 360.
+      de = star.getDEd()
+      mapx,mapy = m(ra,de)
       starXs.append(mapx)
       starYs.append(mapy)
     m.plot(starXs,starYs,"-m",alpha=0.7)
@@ -213,6 +223,8 @@ class ConstBoundaries(object):
     constBoundRaw = {}
     for row in infile:
         RAh = float(row[0:10])
+        if RAh > 180.:
+            RAh -= 360.
         DE = float(row[11:22])
         cst = row[23:27].strip()
         #pointType = float(row[28])
@@ -237,7 +249,7 @@ class ConstBoundaries(object):
 dataObjs = readHip()
 dataArray = numpy.zeros((len(dataObjs),3))
 for i,hd in enumerate(dataObjs):
-  #if hd.getVmag() < 9.:
+  if hd.getVmag() < 7.:
     dataArray[i][0] = hd.getRA()
     dataArray[i][1] = hd.getDE()
     dataArray[i][2] = hd.getVmag()
@@ -265,11 +277,18 @@ ngcNb = numpy.array(ngcNb)
 ## are the lat/lon values of the lower left and upper right corners
 ## of the map.
 ## resolution = 'c' means use crude resolution coastlines.
-m = Basemap(projection='kav7',lat_0=0,lon_0=0,celestial=True)
-#m = Basemap(projection='robin',lat_0=0,lon_0=0,celestial=True)
+#m = Basemap(projection='kav7',lat_0=0,lon_0=0,celestial=True)
+m = Basemap(projection='robin',lat_0=0,lon_0=0,celestial=True)
 #m = Basemap(projection='nplaea',boundinglat=30,lon_0=0,celestial=True)
 #m = Basemap(projection='splaea',boundinglat=-30,lon_0=0,celestial=True)
-#m = Basemap(projection='cyl',celestial=True)
+## Cylindrical
+projection = 'merc'
+#m = Basemap(projection=projection,llcrnrlat=-70,urcrnrlat=70,
+#            llcrnrlon=-180,urcrnrlon=180,lat_ts=20,celestial=True)
+#m = Basemap(projection='cyl',lat_0=0,lon_0=0,celestial=True)
+#m = Basemap(projection='merc',lat_0=0,lon_0=0,celestial=True)
+#m = Basemap(projection='mill',lat_0=0,lon_0=0,celestial=True)
+##
 #m = Basemap(celestial=True,
 #        #projection="laea",
 #        #projection="lcc",
@@ -281,25 +300,29 @@ m = Basemap(projection='kav7',lat_0=0,lon_0=0,celestial=True)
 #        #height=0.1,
 #        #lat_0=-70,
 #        #lon_0=-90,
-#        # Orion-ish
-#        width=0.1,
-#        height=0.1,
-#        lat_0=0,
-#        lon_0=-85,
+#        ## Orion-ish
+#        #width=0.1,
+#        #height=0.1,
+#        #lat_0=0,
+#        #lon_0=-85,
+#        width=0.3,
+#        height=0.3,
+#        lat_0=21.6,
+#        lon_0=114,
 #    )
 # draw parallels and meridians.
 m.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,True])
 m.drawmeridians(numpy.arange(-180.,181.,60.),labels=[True,True,True])
 mapx,mapy = m(dataArray[:,0],dataArray[:,1])
-m.scatter(mapx,mapy,s=10./numpy.sqrt(dataArray[:,2]),marker=".",c='k',linewidths=0)
-mapx,mapy = m(ngcGx[:,0],ngcGx[:,1])
-m.scatter(mapx,mapy,marker=".",c='r',linewidths=0)
-mapx,mapy = m(ngcOC[:,0],ngcOC[:,1])
-m.scatter(mapx,mapy,marker=".",c='g',linewidths=0)
-mapx,mapy = m(ngcGb[:,0],ngcGb[:,1])
-m.scatter(mapx,mapy,marker=".",c='b',linewidths=0)
-mapx,mapy = m(ngcNb[:,0],ngcNb[:,1])
-m.scatter(mapx,mapy,marker=".",c='c',linewidths=0)
+m.scatter(mapx,mapy,s=10./(numpy.sqrt(dataArray[:,2])),marker=".",c='k',linewidths=0)
+#mapx,mapy = m(ngcGx[:,0],ngcGx[:,1])
+#m.scatter(mapx,mapy,marker=".",c='r',linewidths=0)
+#mapx,mapy = m(ngcOC[:,0],ngcOC[:,1])
+#m.scatter(mapx,mapy,marker=".",c='g',linewidths=0)
+#mapx,mapy = m(ngcGb[:,0],ngcGb[:,1])
+#m.scatter(mapx,mapy,marker=".",c='b',linewidths=0)
+#mapx,mapy = m(ngcNb[:,0],ngcNb[:,1])
+#m.scatter(mapx,mapy,marker=".",c='c',linewidths=0)
 drawConstLines(m)
 cbs = ConstBoundaries()
 cbs.draw(m)

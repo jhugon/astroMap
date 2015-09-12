@@ -34,6 +34,8 @@ class CrossRefEntry(Base):
     result = "<CrossRefEntry("
     for i in ["HD","DM","GC","HR","HIP","Fl","Bayer","Cst"]:
         result += i+"="+str(getattr(self,i))+", "
+    result += "RA={0:.1f}, ".format(self.getRAd())
+    result += "DE={0:.1f}".format(self.getDEd())
     result += ")>"
     return result
 
