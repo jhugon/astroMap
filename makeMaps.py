@@ -9,6 +9,109 @@ import numpy as numpy
 import matplotlib.pyplot as plt
 import catalogCrossRef
 
+def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
+  def getSlopeIntercept(x1,y1,x2,y2):
+    slope = (y2-y1)/(x2-x1)
+    intercept = y1 - slope*x1
+    return slope, intercept
+
+  assert(len(xs)==len(ys))
+
+  badList = [
+    "nplaea",
+    "splaea",
+    "npstere",
+    "spstere",
+    "npaeqd",
+    "spqeqd",
+  ]
+  for badProj in badList:
+    if ax.projection == badProj:
+      ax.plot(xs,ys,styleStr,alpha=alpha)
+      return 
+
+  nPoints = len(xs)
+  if nPoints > 1:
+    #print min(xs),min(ys),max(xs),max(ys)
+    #print m(min(xs),min(ys),inverse=True),m(max(xs),max(ys),inverse=True)
+    #print m.llcrnrlon,m.llcrnrlat,m.urcrnrlon,m.urcrnrlat
+    #print m(m.llcrnrlon,m.llcrnrlat),m(m.urcrnrlon,m.urcrnrlat)
+    #print "###############################################################"
+    xsLists = [[]]
+    ysLists = [[]]
+    for i in range(nPoints):
+      x = xs[i]
+      y = ys[i]
+      if i >= nPoints-1:
+        xsLists[-1].append(x)
+        ysLists[-1].append(y)
+      else:
+        xNext = xs[i+1]
+        yNext = ys[i+1]
+        xDeg, yDeg = ax(x,y,inverse=True)
+        xNextDeg, yNextDeg = ax(xNext,yNext,inverse=True)
+        xdiff = xNextDeg - xDeg
+        #xLeftDeg = None
+        #yLeftDeg = None
+        #xRightDeg = None
+        #yRightDeg = None
+        if abs(xdiff) < 180:
+          pass
+          xsLists[-1].append(x)
+          ysLists[-1].append(y)
+        else:
+          if xDeg > xNextDeg:
+            #print xDeg,yDeg,xNextDeg,yNextDeg
+            #####Left
+            xDegM360 = xDeg - 360.
+            slope, yintercept = getSlopeIntercept(xDegM360,yDeg,xNextDeg,yNextDeg)
+            xLeftDeg = ax.llcrnrlon+1e-6
+            yLeftDeg = slope*xLeftDeg+yintercept
+            #print "leftDeg: ",xLeftDeg,yLeftDeg
+            ####Right
+            xNextDegP360 = xNextDeg + 360.
+            #print xNextDegP360
+            slope, yintercept = getSlopeIntercept(xDeg,yDeg,xNextDegP360,yNextDeg)
+            xRightDeg = ax.urcrnrlon-1e-6
+            yRightDeg = slope*xRightDeg+yintercept
+            #print "rightDeg: ",xRightDeg,yRightDeg
+            xLeft,yLeft = m(xLeftDeg,yLeftDeg)
+            xRight,yRight = m(xRightDeg,yRightDeg)
+            #### Append Points
+            xsLists[-1].append(x)
+            ysLists[-1].append(y)
+            xsLists[-1].append(xRight)
+            ysLists[-1].append(yRight)
+            xsLists.append([xLeft])
+            ysLists.append([yLeft])
+          else:
+            #print xDeg,yDeg,xNextDeg,yNextDeg
+            #####Left
+            xNextDegM360 = xNextDeg - 360.
+            #print xNextDegM360
+            slope, yintercept = getSlopeIntercept(xDeg,yDeg,xNextDegM360,yNextDeg)
+            xLeftDeg = ax.llcrnrlon+1e-6
+            yLeftDeg = slope*xLeftDeg+yintercept
+            #print "leftDeg: ",xLeftDeg,yLeftDeg
+            ####Right
+            xDegP360 = xDeg + 360.
+            #print xDegP360
+            slope, yintercept = getSlopeIntercept(xDegP360,yDeg,xNext,yNextDeg)
+            xRightDeg = ax.urcrnrlon-1e-6
+            yRightDeg = slope*xRightDeg+yintercept
+            #print "rightDeg: ",xRightDeg,yRightDeg
+            xLeft,yLeft = m(xLeftDeg,yLeftDeg)
+            xRight,yRight = m(xRightDeg,yRightDeg)
+            #### Append Points
+            xsLists[-1].append(x)
+            ysLists[-1].append(y)
+            xsLists[-1].append(xLeft)
+            ysLists[-1].append(yLeft)
+            xsLists.append([xRight])
+            ysLists.append([yRight])
+    for xsToPlot, ysToPlot in zip(xsLists,ysLists):
+      ax.plot(xsToPlot,ysToPlot,styleStr,alpha=alpha)
+
 class HipEntry(object):
   def __init__(self,row):
     assert(row[0]=="H")
@@ -186,7 +289,7 @@ def drawConstLines(baseMap):
       mapx,mapy = m(ra,de)
       starXs.append(mapx)
       starYs.append(mapy)
-    m.plot(starXs,starYs,"-m",alpha=0.7)
+    drawLinesAroundBounderies(m,starXs,starYs,"-m",alpha=0.7)
 
 class ConstBoundaries(object):
   def __init__(self,localFn="data/bound_20.dat",url="ftp://cdsarc.u-strasbg.fr/cats/VI/49/bound_20.dat"):
@@ -223,12 +326,12 @@ class ConstBoundaries(object):
     constBoundRaw = {}
     for row in infile:
         RAh = float(row[0:10])
-        if RAh > 180.:
-            RAh -= 360.
         DE = float(row[11:22])
         cst = row[23:27].strip()
         #pointType = float(row[28])
         RA = RAh * 15.
+        if RA > 180.:
+            RA -= 360.
         if constBoundRaw.has_key(cst):
             constBoundRaw[cst].append([RA,DE])
         else:
@@ -244,7 +347,8 @@ class ConstBoundaries(object):
         mapx,mapy = m(point[0],point[1])
         mapXs.append(mapx)
         mapYs.append(mapy)
-      m.plot(mapXs,mapYs,"--c",alpha=0.7)
+      #m.plot(mapXs,mapYs,"--c",alpha=0.7)
+      drawLinesAroundBounderies(m,mapXs,mapYs,"-c")
 
 dataObjs = readHip()
 dataArray = numpy.zeros((len(dataObjs),3))
@@ -273,22 +377,20 @@ ngcOC = numpy.array(ngcOC)
 ngcGb = numpy.array(ngcGb)
 ngcNb = numpy.array(ngcNb)
 
-## llcrnrlat,llcrnrlon,urcrnrlat,urcrnrlon
-## are the lat/lon values of the lower left and upper right corners
-## of the map.
-## resolution = 'c' means use crude resolution coastlines.
 #m = Basemap(projection='kav7',lat_0=0,lon_0=0,celestial=True)
 m = Basemap(projection='robin',lat_0=0,lon_0=0,celestial=True)
 #m = Basemap(projection='nplaea',boundinglat=30,lon_0=0,celestial=True)
 #m = Basemap(projection='splaea',boundinglat=-30,lon_0=0,celestial=True)
-## Cylindrical
-projection = 'merc'
+################# Cylindrical
+#projection = 'cyl'
+##projection = 'merc'
+##projection = 'mill'
+## llcrnrlat,llcrnrlon,urcrnrlat,urcrnrlon
+## are the lat/lon values of the lower left and upper right corners
+## of the map.
 #m = Basemap(projection=projection,llcrnrlat=-70,urcrnrlat=70,
 #            llcrnrlon=-180,urcrnrlon=180,lat_ts=20,celestial=True)
-#m = Basemap(projection='cyl',lat_0=0,lon_0=0,celestial=True)
-#m = Basemap(projection='merc',lat_0=0,lon_0=0,celestial=True)
-#m = Basemap(projection='mill',lat_0=0,lon_0=0,celestial=True)
-##
+##########################3
 #m = Basemap(celestial=True,
 #        #projection="laea",
 #        #projection="lcc",
@@ -313,8 +415,8 @@ projection = 'merc'
 # draw parallels and meridians.
 m.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,True])
 m.drawmeridians(numpy.arange(-180.,181.,60.),labels=[True,True,True])
-mapx,mapy = m(dataArray[:,0],dataArray[:,1])
-m.scatter(mapx,mapy,s=10./(numpy.sqrt(dataArray[:,2])),marker=".",c='k',linewidths=0)
+#mapx,mapy = m(dataArray[:,0],dataArray[:,1])
+#m.scatter(mapx,mapy,s=10./(numpy.sqrt(dataArray[:,2])),marker=".",c='k',linewidths=0)
 #mapx,mapy = m(ngcGx[:,0],ngcGx[:,1])
 #m.scatter(mapx,mapy,marker=".",c='r',linewidths=0)
 #mapx,mapy = m(ngcOC[:,0],ngcOC[:,1])
@@ -326,6 +428,11 @@ m.scatter(mapx,mapy,s=10./(numpy.sqrt(dataArray[:,2])),marker=".",c='k',linewidt
 drawConstLines(m)
 cbs = ConstBoundaries()
 cbs.draw(m)
-plt.show()
+
+#plt.show()
+plt.draw()
+plt.savefig("map.pdf")
+plt.savefig("map.png")
+
 
 
