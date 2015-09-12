@@ -6,7 +6,7 @@ import urllib2
 import gzip
 from mpl_toolkits.basemap import Basemap
 import numpy as numpy
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as mpl
 import catalogCrossRef
 
 def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
@@ -75,8 +75,8 @@ def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
             xRightDeg = ax.urcrnrlon-1e-6
             yRightDeg = slope*xRightDeg+yintercept
             #print "rightDeg: ",xRightDeg,yRightDeg
-            xLeft,yLeft = m(xLeftDeg,yLeftDeg)
-            xRight,yRight = m(xRightDeg,yRightDeg)
+            xLeft,yLeft = ax(xLeftDeg,yLeftDeg)
+            xRight,yRight = ax(xRightDeg,yRightDeg)
             #### Append Points
             xsLists[-1].append(x)
             ysLists[-1].append(y)
@@ -100,8 +100,8 @@ def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
             xRightDeg = ax.urcrnrlon-1e-6
             yRightDeg = slope*xRightDeg+yintercept
             #print "rightDeg: ",xRightDeg,yRightDeg
-            xLeft,yLeft = m(xLeftDeg,yLeftDeg)
-            xRight,yRight = m(xRightDeg,yRightDeg)
+            xLeft,yLeft = ax(xLeftDeg,yLeftDeg)
+            xRight,yRight = ax(xRightDeg,yRightDeg)
             #### Append Points
             xsLists[-1].append(x)
             ysLists[-1].append(y)
@@ -286,10 +286,10 @@ def drawConstLines(baseMap):
       if ra > 180.:
         ra -= 360.
       de = star.getDEd()
-      mapx,mapy = m(ra,de)
+      mapx,mapy = baseMap(ra,de)
       starXs.append(mapx)
       starYs.append(mapy)
-    drawLinesAroundBounderies(m,starXs,starYs,"-m",alpha=0.7)
+    drawLinesAroundBounderies(baseMap,starXs,starYs,"-m",alpha=0.7)
 
 class ConstBoundaries(object):
   def __init__(self,localFn="data/bound_20.dat",url="ftp://cdsarc.u-strasbg.fr/cats/VI/49/bound_20.dat"):
@@ -344,95 +344,167 @@ class ConstBoundaries(object):
       mapXs = []
       mapYs = []
       for point in constBoundRaw[cst]:
-        mapx,mapy = m(point[0],point[1])
+        mapx,mapy = baseMap(point[0],point[1])
         mapXs.append(mapx)
         mapYs.append(mapy)
       #m.plot(mapXs,mapYs,"--c",alpha=0.7)
-      drawLinesAroundBounderies(m,mapXs,mapYs,"-c")
+      drawLinesAroundBounderies(baseMap,mapXs,mapYs,"-c")
 
-dataObjs = readHip()
-dataArray = numpy.zeros((len(dataObjs),3))
-for i,hd in enumerate(dataObjs):
-  if hd.getVmag() < 7.:
-    dataArray[i][0] = hd.getRA()
-    dataArray[i][1] = hd.getDE()
-    dataArray[i][2] = hd.getVmag()
+class StarMapper(object):
 
-ngcObjs = readNGC()
-ngcGx = []
-ngcOC = []
-ngcGb = []
-ngcNb = []
-for ngc in ngcObjs:
-  if "Gx" in ngc.getType():
-    ngcGx.append([ngc.getRA(),ngc.getDE()])
-  if "OC" in ngc.getType() or "C+N" in ngc.getType():
-    ngcOC.append([ngc.getRA(),ngc.getDE()])
-  if "Gb" in ngc.getType():
-    ngcGb.append([ngc.getRA(),ngc.getDE()])
-  if "Nb" in ngc.getType() or "Pl" in ngc.getType():
-    ngcNb.append([ngc.getRA(),ngc.getDE()])
-ngcGx = numpy.array(ngcGx)
-ngcOC = numpy.array(ngcOC)
-ngcGb = numpy.array(ngcGb)
-ngcNb = numpy.array(ngcNb)
+  def __init__(self):
+    self.setupData()
 
-#m = Basemap(projection='kav7',lat_0=0,lon_0=0,celestial=True)
-m = Basemap(projection='robin',lat_0=0,lon_0=0,celestial=True)
-#m = Basemap(projection='nplaea',boundinglat=30,lon_0=0,celestial=True)
-#m = Basemap(projection='splaea',boundinglat=-30,lon_0=0,celestial=True)
-################# Cylindrical
-#projection = 'cyl'
-##projection = 'merc'
-##projection = 'mill'
-## llcrnrlat,llcrnrlon,urcrnrlat,urcrnrlon
-## are the lat/lon values of the lower left and upper right corners
-## of the map.
-#m = Basemap(projection=projection,llcrnrlat=-70,urcrnrlat=70,
-#            llcrnrlon=-180,urcrnrlon=180,lat_ts=20,celestial=True)
-##########################3
-#m = Basemap(celestial=True,
-#        #projection="laea",
-#        #projection="lcc",
-#        projection="aeqd",
-#        #projection='stere',
-#        rsphere=1./(2.*numpy.pi),
-#        ## LMC-ish
-#        #width=0.10,
-#        #height=0.1,
-#        #lat_0=-70,
-#        #lon_0=-90,
-#        ## Orion-ish
-#        #width=0.1,
-#        #height=0.1,
-#        #lat_0=0,
-#        #lon_0=-85,
-#        width=0.3,
-#        height=0.3,
-#        lat_0=21.6,
-#        lon_0=114,
-#    )
-# draw parallels and meridians.
-m.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,True])
-m.drawmeridians(numpy.arange(-180.,181.,60.),labels=[True,True,True])
-#mapx,mapy = m(dataArray[:,0],dataArray[:,1])
-#m.scatter(mapx,mapy,s=10./(numpy.sqrt(dataArray[:,2])),marker=".",c='k',linewidths=0)
-#mapx,mapy = m(ngcGx[:,0],ngcGx[:,1])
-#m.scatter(mapx,mapy,marker=".",c='r',linewidths=0)
-#mapx,mapy = m(ngcOC[:,0],ngcOC[:,1])
-#m.scatter(mapx,mapy,marker=".",c='g',linewidths=0)
-#mapx,mapy = m(ngcGb[:,0],ngcGb[:,1])
-#m.scatter(mapx,mapy,marker=".",c='b',linewidths=0)
-#mapx,mapy = m(ngcNb[:,0],ngcNb[:,1])
-#m.scatter(mapx,mapy,marker=".",c='c',linewidths=0)
-drawConstLines(m)
-cbs = ConstBoundaries()
-cbs.draw(m)
+  def setupData(self):
+    dataObjs = readHip()
+    dataArray = numpy.zeros((len(dataObjs),3))
+    for i,hd in enumerate(dataObjs):
+      if hd.getVmag() < 7.:
+        dataArray[i][0] = hd.getRA()
+        dataArray[i][1] = hd.getDE()
+        dataArray[i][2] = hd.getVmag()
+    self.dataArray = dataArray
+    
+    ngcObjs = readNGC()
+    ngcGx = []
+    ngcOC = []
+    ngcGb = []
+    ngcNb = []
+    for ngc in ngcObjs:
+      if "Gx" in ngc.getType():
+        ngcGx.append([ngc.getRA(),ngc.getDE()])
+      if "OC" in ngc.getType() or "C+N" in ngc.getType():
+        ngcOC.append([ngc.getRA(),ngc.getDE()])
+      if "Gb" in ngc.getType():
+        ngcGb.append([ngc.getRA(),ngc.getDE()])
+      if "Nb" in ngc.getType() or "Pl" in ngc.getType():
+        ngcNb.append([ngc.getRA(),ngc.getDE()])
+    self.ngcGx = numpy.array(ngcGx)
+    self.ngcOC = numpy.array(ngcOC)
+    self.ngcGb = numpy.array(ngcGb)
+    self.ngcNb = numpy.array(ngcNb)
 
-#plt.show()
-plt.draw()
-plt.savefig("map.pdf")
-plt.savefig("map.png")
+  def createMap(self,basemapArgs):
+    if type(basemapArgs) != dict:
+      raise Exception("StarMapper.createMap requires dict argument of Basemap args")
+    basemapArgs['celestial'] = True
+    m = Basemap(**basemapArgs)
+    return m
+
+  def drawStars(self,basemap):
+    mapx,mapy = basemap(self.dataArray[:,0],self.dataArray[:,1])
+    basemap.scatter(mapx,mapy,s=10./(numpy.sqrt(self.dataArray[:,2])),marker=".",c='k',linewidths=0)
+
+  def drawConsts(self,basemap):
+    drawConstLines(basemap)
+    ConstBoundaries().draw(basemap)
+
+  def drawGx(self,basemap,c='r'):
+    mapx,mapy = basemap(self.ngcGx[:,0],self.ngcGx[:,1])
+    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+  def drawOC(self,basemap,c='g'):
+    mapx,mapy = basemap(self.ngcOC[:,0],self.ngcOC[:,1])
+    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+  def drawGb(self,basemap,c='b'):
+    mapx,mapy = basemap(self.ngcGb[:,0],self.ngcGb[:,1])
+    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+  def drawNb(self,basemap,c='m'):
+    mapx,mapy = basemap(self.ngcNb[:,0],self.ngcNb[:,1])
+    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+
+  def drawGrid(self,basemap):
+    basemap.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,True])
+    basemap.drawmeridians(numpy.arange(-180.,181.,60.),labels=[True,True,True])
+
+if __name__ == "__main__":
+
+  sm = StarMapper()
+
+  basemapArgs = {
+  
+    'projection':'robin',
+    #'projection':'kav7',
+    'lat_0':0,
+    'lon_0':0,
+  
+#    'projection':'nplaea',
+#    'lon_0':0,
+#    'boundinglat':30,
+#  
+#    'projection':'splaea',
+#    'lon_0':0,
+#    'boundinglat':-30,
+#  
+#    #'projection':'cyl',
+#    #'projection':'merc',
+#    'projection':'mill',
+#    'llcrnrlat':-70,
+#    'urcrnrlat':70,
+#    'llcrnrlon':-180,
+#    'urcrnrlon':180,
+#    'lat_ts':20,
+  
+  }
 
 
+  #fig, ax = mpl.subplots()
+  #basemapArgs['ax']=ax
 
+  #m = sm.createMap(basemapArgs)
+  ##sm.drawStars(m)
+  ##sm.drawGb(m)
+  ##sm.drawGx(m)
+  ##sm.drawNb(m)
+  ##sm.drawOC(m)
+  #sm.drawConsts(m)
+  #
+  #fig.savefig("map.pdf")
+  #fig.savefig("map.png")
+
+  ######################################################
+  ######################################################
+  ######################################################
+
+  fig = mpl.figure(figsize=(8.5,11.),dpi=600)
+  axMain = fig.add_axes([0.07,0.3,0.86,0.4]) # left, bottom, width, height in fraction of fig
+  axNP = fig.add_axes([0.07,0.68,0.86,0.3]) # left, bottom, width, height in fraction of fig
+  axSP = fig.add_axes([0.07,0.02,0.86,0.3]) # left, bottom, width, height in fraction of fig
+
+  mMain = sm.createMap({
+    'projection':'cyl',
+    #'projection':'merc',
+    #'projection':'mill',
+    'llcrnrlat':-70,
+    'urcrnrlat':70,
+    'llcrnrlon':-180,
+    'urcrnrlon':180,
+    'lat_ts':20,
+    'ax':axMain,
+  })
+
+  mNP = sm.createMap({
+    'projection':'nplaea',
+    'lon_0':0,
+    'boundinglat':30,
+    'ax':axNP,
+  })
+
+  mSP = sm.createMap({
+    'projection':'splaea',
+    'lon_0':180,
+    'boundinglat':-30,
+    'ax':axSP,
+  })
+
+  maps = [mMain,mNP,mSP]
+  for m in maps:
+    #sm.drawStars(m)
+    #sm.drawGb(m)
+    #sm.drawGx(m)
+    #sm.drawNb(m)
+    #sm.drawOC(m)
+    sm.drawConsts(m)
+    sm.drawGrid(m)
+
+  fig.savefig('map.png')
+  
