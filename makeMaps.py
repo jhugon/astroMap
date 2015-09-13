@@ -9,6 +9,8 @@ import numpy as numpy
 import matplotlib.pyplot as mpl
 import catalogCrossRef
 
+
+
 def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
   def getSlopeIntercept(x1,y1,x2,y2):
     slope = (y2-y1)/(x2-x1)
@@ -23,7 +25,7 @@ def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
     "npstere",
     "spstere",
     "npaeqd",
-    "spqeqd",
+    "spaeqd",
   ]
   for badProj in badList:
     if ax.projection == badProj:
@@ -384,6 +386,9 @@ class StarMapper(object):
     self.ngcGb = numpy.array(ngcGb)
     self.ngcNb = numpy.array(ngcNb)
 
+    #print len(self.ngcOC)
+    #self.ngcOC = self.ngcOC[100:150]
+
   def createMap(self,basemapArgs):
     if type(basemapArgs) != dict:
       raise Exception("StarMapper.createMap requires dict argument of Basemap args")
@@ -400,21 +405,62 @@ class StarMapper(object):
     ConstBoundaries().draw(basemap)
 
   def drawGx(self,basemap,c='r'):
-    mapx,mapy = basemap(self.ngcGx[:,0],self.ngcGx[:,1])
-    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    if isinstance(basemap,Basemap):
+      mapx,mapy = basemap(self.ngcGx[:,0],self.ngcGx[:,1])
+      basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    else:
+      if basemap.projection == "npaeqd":
+        mapTheta = self.ngcGx[:,0]*numpy.pi/180.
+        mapRho = 90 - self.ngcGx[:,1]
+        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
+      elif basemap.projection == "spaeqd":
+        mapTheta = self.ngcGx[:,0]*numpy.pi/180.
+        mapRho = 90 + self.ngcGx[:,1]
+        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
   def drawOC(self,basemap,c='g'):
-    mapx,mapy = basemap(self.ngcOC[:,0],self.ngcOC[:,1])
-    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    if isinstance(basemap,Basemap):
+      mapx,mapy = basemap(self.ngcOC[:,0],self.ngcOC[:,1])
+      basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    else:
+      if basemap.projection == "npaeqd":
+        mapTheta = self.ngcOC[:,0]*numpy.pi/180.
+        mapRho = 90 - self.ngcOC[:,1]
+        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
+      elif basemap.projection == "spaeqd":
+        mapTheta = self.ngcOC[:,0]*numpy.pi/180.
+        mapRho = 90 + self.ngcOC[:,1]
+        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
   def drawGb(self,basemap,c='b'):
-    mapx,mapy = basemap(self.ngcGb[:,0],self.ngcGb[:,1])
-    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    if isinstance(basemap,Basemap):
+      mapx,mapy = basemap(self.ngcGb[:,0],self.ngcGb[:,1])
+      basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    else:
+      if basemap.projection == "npaeqd":
+        mapTheta = self.ngcGb[:,0]*numpy.pi/180.
+        mapRho = 90 - self.ngcGb[:,1]
+        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
+      elif basemap.projection == "spaeqd":
+        mapTheta = self.ngcGb[:,0]*numpy.pi/180.
+        mapRho = 90 + self.ngcGb[:,1]
+        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
   def drawNb(self,basemap,c='m'):
-    mapx,mapy = basemap(self.ngcNb[:,0],self.ngcNb[:,1])
-    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    if isinstance(basemap,Basemap):
+      mapx,mapy = basemap(self.ngcNb[:,0],self.ngcNb[:,1])
+      basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    else:
+      if basemap.projection == "npaeqd":
+        mapTheta = self.ngcNb[:,0]*numpy.pi/180.
+        mapRho = 90 - self.ngcNb[:,1]
+        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
+      elif basemap.projection == "spaeqd":
+        mapTheta = self.ngcNb[:,0]*numpy.pi/180.
+        mapRho = 90 + self.ngcNb[:,1]
+        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
 
   def drawGrid(self,basemap):
-    basemap.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,True])
-    basemap.drawmeridians(numpy.arange(-180.,181.,60.),labels=[True,True,True])
+    if isinstance(basemap,Basemap):
+      basemap.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,True])
+      basemap.drawmeridians(numpy.arange(-180.,181.,60.),labels=[True,True,True])
 
 if __name__ == "__main__":
 
@@ -468,14 +514,16 @@ if __name__ == "__main__":
   fig = mpl.figure(figsize=(8.5,11.),dpi=600)
   axMain = fig.add_axes([0.07,0.3,0.86,0.4]) # left, bottom, width, height in fraction of fig
   axNP = fig.add_axes([0.07,0.68,0.86,0.3]) # left, bottom, width, height in fraction of fig
-  axSP = fig.add_axes([0.07,0.02,0.86,0.3]) # left, bottom, width, height in fraction of fig
+  axSP = fig.add_axes([0.07,0.02,0.86,0.3],projection="polar") # left, bottom, width, height in fraction of fig
+  axSP.set_ylim(0,50)
+  axSP.projection = "spaeqd"
 
   mMain = sm.createMap({
     'projection':'cyl',
     #'projection':'merc',
     #'projection':'mill',
-    'llcrnrlat':-70,
-    'urcrnrlat':70,
+    'llcrnrlat':-80,
+    'urcrnrlat':80,
     'llcrnrlon':-180,
     'urcrnrlon':180,
     'lat_ts':20,
@@ -489,22 +537,24 @@ if __name__ == "__main__":
     'ax':axNP,
   })
 
-  mSP = sm.createMap({
-    'projection':'splaea',
-    'lon_0':180,
-    'boundinglat':-30,
-    'ax':axSP,
-  })
+  #mSP = sm.createMap({
+  #  'projection':'splaea',
+  #  'lon_0':180,
+  #  'boundinglat':-30,
+  #  'ax':axSP,
+  #})
 
-  maps = [mMain,mNP,mSP]
+  maps = [mMain,mNP,axSP]
   for m in maps:
     #sm.drawStars(m)
-    #sm.drawGb(m)
-    #sm.drawGx(m)
-    #sm.drawNb(m)
+    sm.drawGb(m)
+    sm.drawGx(m)
+    sm.drawNb(m)
     #sm.drawOC(m)
-    sm.drawConsts(m)
+    #sm.drawConsts(m)
     sm.drawGrid(m)
+
+  #axSP.plot(numpy.array([90,180])*numpy.pi/180,[10,20],'om')
 
   fig.savefig('map.png')
   
