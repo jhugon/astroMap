@@ -45,6 +45,11 @@ def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
     "npaeqd",
     "spaeqd",
   ]
+
+  if not isinstance(ax,Basemap):
+    ax.plot(xs,ys,styleStr,alpha=alpha)
+    return 
+
   for badProj in badList:
     if ax.projection == badProj:
       ax.plot(xs,ys,styleStr,alpha=alpha)
@@ -306,7 +311,7 @@ def drawConstLines(baseMap):
       if ra > 180.:
         ra -= 360.
       de = star.getDEd()
-      mapx,mapy = baseMap(ra,de)
+      mapx,mapy = baseMap.project(ra,de)
       starXs.append(mapx)
       starYs.append(mapy)
     drawLinesAroundBounderies(baseMap,starXs,starYs,"-m",alpha=0.7)
@@ -364,7 +369,7 @@ class ConstBoundaries(object):
       mapXs = []
       mapYs = []
       for point in constBoundRaw[cst]:
-        mapx,mapy = baseMap(point[0],point[1])
+        mapx,mapy = baseMap.project(point[0],point[1])
         mapXs.append(mapx)
         mapYs.append(mapy)
       #m.plot(mapXs,mapYs,"--c",alpha=0.7)
@@ -415,7 +420,7 @@ class StarMapper(object):
     return m
 
   def drawStars(self,basemap):
-    mapx,mapy = basemap(self.dataArray[:,0],self.dataArray[:,1])
+    mapx,mapy = basemap.project(self.dataArray[:,0],self.dataArray[:,1])
     basemap.scatter(mapx,mapy,s=10./(numpy.sqrt(self.dataArray[:,2])),marker=".",c='k',linewidths=0)
 
   def drawConsts(self,basemap):
@@ -529,11 +534,11 @@ if __name__ == "__main__":
   maps = [mMain,mNP,axSP]
   for m in maps:
     #sm.drawStars(m)
-    sm.drawGb(m)
-    sm.drawGx(m)
-    sm.drawNb(m)
+    #sm.drawGb(m)
+    #sm.drawGx(m)
+    #sm.drawNb(m)
     #sm.drawOC(m)
-    #sm.drawConsts(m)
+    sm.drawConsts(m)
     sm.drawGrid(m)
 
   #axSP.plot(numpy.array([90,180])*numpy.pi/180,[10,20],'om')
