@@ -4,12 +4,30 @@ import sys
 import re
 import urllib2
 import gzip
+import types
 from mpl_toolkits.basemap import Basemap
 import numpy as numpy
 import matplotlib.pyplot as mpl
 import catalogCrossRef
 
+def polarAxisWrapper(axis,projection):
+  def project(self,xList,yList):
+    if isinstance(self,Basemap):
+      return self(xList, yList)
+    mapRho = None
+    mapTheta = None
+    if self.projection == "npaeqd":
+      mapTheta = xList*numpy.pi/180.
+      mapRho = 90 - yList[:,1]
+    elif self.projection == "spaeqd":
+      mapTheta = xList*numpy.pi/180.
+      mapRho = 90 + yList 
+    return mapTheta, mapRho
 
+  if not isinstance(axis,Basemap):
+    axis.projection = projection
+  axis.project = types.MethodType(project,axis)
+  return axis
 
 def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
   def getSlopeIntercept(x1,y1,x2,y2):
@@ -405,57 +423,17 @@ class StarMapper(object):
     ConstBoundaries().draw(basemap)
 
   def drawGx(self,basemap,c='r'):
-    if isinstance(basemap,Basemap):
-      mapx,mapy = basemap(self.ngcGx[:,0],self.ngcGx[:,1])
-      basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
-    else:
-      if basemap.projection == "npaeqd":
-        mapTheta = self.ngcGx[:,0]*numpy.pi/180.
-        mapRho = 90 - self.ngcGx[:,1]
-        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
-      elif basemap.projection == "spaeqd":
-        mapTheta = self.ngcGx[:,0]*numpy.pi/180.
-        mapRho = 90 + self.ngcGx[:,1]
-        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
+    mapx,mapy = basemap.project(self.ngcGx[:,0],self.ngcGx[:,1])
+    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
   def drawOC(self,basemap,c='g'):
-    if isinstance(basemap,Basemap):
-      mapx,mapy = basemap(self.ngcOC[:,0],self.ngcOC[:,1])
-      basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
-    else:
-      if basemap.projection == "npaeqd":
-        mapTheta = self.ngcOC[:,0]*numpy.pi/180.
-        mapRho = 90 - self.ngcOC[:,1]
-        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
-      elif basemap.projection == "spaeqd":
-        mapTheta = self.ngcOC[:,0]*numpy.pi/180.
-        mapRho = 90 + self.ngcOC[:,1]
-        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
+    mapx,mapy = basemap.project(self.ngcOC[:,0],self.ngcOC[:,1])
+    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
   def drawGb(self,basemap,c='b'):
-    if isinstance(basemap,Basemap):
-      mapx,mapy = basemap(self.ngcGb[:,0],self.ngcGb[:,1])
-      basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
-    else:
-      if basemap.projection == "npaeqd":
-        mapTheta = self.ngcGb[:,0]*numpy.pi/180.
-        mapRho = 90 - self.ngcGb[:,1]
-        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
-      elif basemap.projection == "spaeqd":
-        mapTheta = self.ngcGb[:,0]*numpy.pi/180.
-        mapRho = 90 + self.ngcGb[:,1]
-        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
+    mapx,mapy = basemap.project(self.ngcGb[:,0],self.ngcGb[:,1])
+    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
   def drawNb(self,basemap,c='m'):
-    if isinstance(basemap,Basemap):
-      mapx,mapy = basemap(self.ngcNb[:,0],self.ngcNb[:,1])
-      basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
-    else:
-      if basemap.projection == "npaeqd":
-        mapTheta = self.ngcNb[:,0]*numpy.pi/180.
-        mapRho = 90 - self.ngcNb[:,1]
-        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
-      elif basemap.projection == "spaeqd":
-        mapTheta = self.ngcNb[:,0]*numpy.pi/180.
-        mapRho = 90 + self.ngcNb[:,1]
-        basemap.scatter(mapTheta,mapRho,marker=".",c=c,linewidths=0)
+    mapx,mapy = basemap.project(self.ngcNb[:,0],self.ngcNb[:,1])
+    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
 
   def drawGrid(self,basemap):
     if isinstance(basemap,Basemap):
@@ -543,6 +521,10 @@ if __name__ == "__main__":
   #  'boundinglat':-30,
   #  'ax':axSP,
   #})
+
+  polarAxisWrapper(mMain,"")
+  polarAxisWrapper(mNP,"npaeqd")
+  polarAxisWrapper(axSP,"spaeqd")
 
   maps = [mMain,mNP,axSP]
   for m in maps:
