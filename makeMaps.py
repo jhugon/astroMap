@@ -10,23 +10,62 @@ import numpy as numpy
 import matplotlib.pyplot as mpl
 import catalogCrossRef
 
-def polarAxisWrapper(axis,projection):
+def polarAxisWrapper(axis,projection,zeroAt=0.):
+  """
+  args:
+    axis: The axis or Basemap instance
+    projection: a string describing the map projection
+    zeroAt: At what position you want zero to be at in degrees
+  """
   def project(self,xList,yList):
     if isinstance(self,Basemap):
       return self(xList, yList)
     mapRho = None
     mapTheta = None
     if self.projection == "npaeqd":
-      mapTheta = xList*numpy.pi/180.
-      mapRho = 90 - yList[:,1]
+      mapTheta = (-xList+self.zeroAt)*numpy.pi/180.
+      mapRho = 90 - yList
     elif self.projection == "spaeqd":
-      mapTheta = xList*numpy.pi/180.
+      mapTheta = (xList+self.zeroAt)*numpy.pi/180.
       mapRho = 90 + yList 
     return mapTheta, mapRho
 
+  axis.project = types.MethodType(project,axis)
   if not isinstance(axis,Basemap):
     axis.projection = projection
-  axis.project = types.MethodType(project,axis)
+    axis.zeroAt = zeroAt
+    # y-axis
+    ylim = axis.get_ylim()
+    tickPos = []
+    tickLabel = []
+    for pos in numpy.arange(ylim[0],ylim[1],15):
+      tickPos.append(pos)
+      if axis.projection[:2] == "np":
+        tickLabel.append(u"{0:.0f}\xb0".format(90.-pos))
+      elif axis.projection[:2] == "sp":
+        tickLabel.append(u"{0:.0f}\xb0".format(-90.+pos))
+      else:
+        raise Exception("Not np or sp")
+    axis.set_yticks(tickPos)
+    axis.set_yticklabels(tickLabel)
+    # x-axis
+    tickPos = []
+    tickLabel = []
+    nTicks = 12
+    for iTick in numpy.arange(nTicks):
+      pos = iTick*2*numpy.pi/nTicks
+      label = iTick*360./nTicks-axis.zeroAt
+      if label > 180.:
+        label -= 360.
+      tickPos.append(pos)
+      if axis.projection[:2] == "np":
+        tickLabel.append(u"{0:.0f}\xb0".format(-label))
+      elif axis.projection[:2] == "sp":
+        tickLabel.append(u"{0:.0f}\xb0".format(label))
+      else:
+        raise Exception("Not np or sp")
+    axis.set_xticks(tickPos)
+    axis.set_xticklabels(tickLabel)
   return axis
 
 def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
@@ -496,10 +535,12 @@ if __name__ == "__main__":
 
   fig = mpl.figure(figsize=(8.5,11.),dpi=600)
   axMain = fig.add_axes([0.07,0.3,0.86,0.4]) # left, bottom, width, height in fraction of fig
-  axNP = fig.add_axes([0.07,0.68,0.86,0.3]) # left, bottom, width, height in fraction of fig
+  axNP = fig.add_axes([0.07,0.68,0.86,0.3],projection="polar") # left, bottom, width, height in fraction of fig
   axSP = fig.add_axes([0.07,0.02,0.86,0.3],projection="polar") # left, bottom, width, height in fraction of fig
   axSP.set_ylim(0,50)
   axSP.projection = "spaeqd"
+  axNP.set_ylim(0,50)
+  axNP.projection = "npaeqd"
 
   mMain = sm.createMap({
     'projection':'cyl',
@@ -513,25 +554,11 @@ if __name__ == "__main__":
     'ax':axMain,
   })
 
-  mNP = sm.createMap({
-    'projection':'nplaea',
-    'lon_0':0,
-    'boundinglat':30,
-    'ax':axNP,
-  })
-
-  #mSP = sm.createMap({
-  #  'projection':'splaea',
-  #  'lon_0':180,
-  #  'boundinglat':-30,
-  #  'ax':axSP,
-  #})
-
   polarAxisWrapper(mMain,"")
-  polarAxisWrapper(mNP,"npaeqd")
-  polarAxisWrapper(axSP,"spaeqd")
+  polarAxisWrapper(axNP,"npaeqd",zeroAt=-90.)
+  polarAxisWrapper(axSP,"spaeqd",zeroAt=90.)
 
-  maps = [mMain,mNP,axSP]
+  maps = [mMain,axNP,axSP]
   for m in maps:
     #sm.drawStars(m)
     #sm.drawGb(m)
@@ -541,7 +568,6 @@ if __name__ == "__main__":
     sm.drawConsts(m)
     sm.drawGrid(m)
 
-  #axSP.plot(numpy.array([90,180])*numpy.pi/180,[10,20],'om')
-
   fig.savefig('map.png')
-  
+  fig.savefig('map.pdf')
+
