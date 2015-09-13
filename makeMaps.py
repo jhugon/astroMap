@@ -38,7 +38,7 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
     ylim = axis.get_ylim()
     tickPos = []
     tickLabel = []
-    for pos in numpy.arange(ylim[0],ylim[1],15):
+    for pos in numpy.arange(ylim[0],ylim[1],10):
       tickPos.append(pos)
       if axis.projection[:2] == "np":
         tickLabel.append(u"{0:.0f}\xb0".format(90.-pos))
@@ -68,7 +68,7 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
     axis.set_xticklabels(tickLabel)
   return axis
 
-def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
+def drawLinesAroundBounderies(ax,xs,ys,color=1,linestyle="-",marker=None,alpha=1.0,tooFar = 180.):
   def getSlopeIntercept(x1,y1,x2,y2):
     slope = (y2-y1)/(x2-x1)
     intercept = y1 - slope*x1
@@ -86,12 +86,12 @@ def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
   ]
 
   if not isinstance(ax,Basemap):
-    ax.plot(xs,ys,styleStr,alpha=alpha)
+    ax.plot(xs,ys,alpha=alpha,color=color,linestyle=linestyle,marker=marker)
     return 
 
   for badProj in badList:
     if ax.projection == badProj:
-      ax.plot(xs,ys,styleStr,alpha=alpha)
+      ax.plot(xs,ys,alpha=alpha,color=color,linestyle=linestyle,marker=marker)
       return 
 
   nPoints = len(xs)
@@ -174,7 +174,7 @@ def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
             xsLists.append([xRight])
             ysLists.append([yRight])
     for xsToPlot, ysToPlot in zip(xsLists,ysLists):
-      ax.plot(xsToPlot,ysToPlot,styleStr,alpha=alpha)
+      ax.plot(xsToPlot,ysToPlot,alpha=alpha,color=color,linestyle=linestyle,marker=marker)
 
 class HipEntry(object):
   def __init__(self,row):
@@ -353,7 +353,7 @@ def drawConstLines(baseMap):
       mapx,mapy = baseMap.project(ra,de)
       starXs.append(mapx)
       starYs.append(mapy)
-    drawLinesAroundBounderies(baseMap,starXs,starYs,"-m",alpha=0.7)
+    drawLinesAroundBounderies(baseMap,starXs,starYs,color='0.5',linestyle='-',marker=None)
 
 class ConstBoundaries(object):
   def __init__(self,localFn="data/bound_20.dat",url="ftp://cdsarc.u-strasbg.fr/cats/VI/49/bound_20.dat"):
@@ -412,7 +412,7 @@ class ConstBoundaries(object):
         mapXs.append(mapx)
         mapYs.append(mapy)
       #m.plot(mapXs,mapYs,"--c",alpha=0.7)
-      drawLinesAroundBounderies(baseMap,mapXs,mapYs,"-c")
+      drawLinesAroundBounderies(baseMap,mapXs,mapYs,color='0.8',linestyle='-',marker=None)
 
 class StarMapper(object):
 
@@ -463,8 +463,8 @@ class StarMapper(object):
     basemap.scatter(mapx,mapy,s=10./(numpy.sqrt(self.dataArray[:,2])),marker=".",c='k',linewidths=0)
 
   def drawConsts(self,basemap):
-    drawConstLines(basemap)
     ConstBoundaries().draw(basemap)
+    drawConstLines(basemap)
 
   def drawGx(self,basemap,c='r'):
     mapx,mapy = basemap.project(self.ngcGx[:,0],self.ngcGx[:,1])
@@ -481,7 +481,7 @@ class StarMapper(object):
 
   def drawGrid(self,basemap):
     if isinstance(basemap,Basemap):
-      basemap.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,False,False])
+      basemap.drawparallels(numpy.arange(-90.,91.,10.),labels=[True,True,False,False])
       basemap.drawmeridians(numpy.arange(-180.,181.,360/24.),labels=[False,False,True,True],fmt=lambda x: "{0:.0f}h".format(x/15.))
 
 if __name__ == "__main__":
@@ -533,7 +533,7 @@ if __name__ == "__main__":
   ######################################################
   ######################################################
 
-  fig = mpl.figure(figsize=(8.5,11.),dpi=600)
+  fig = mpl.figure(figsize=(36,48),dpi=300)
   axMain = fig.add_axes([0.07,0.3,0.86,0.4]) # left, bottom, width, height in fraction of fig
   axNP = fig.add_axes([0.07,0.68,0.86,0.3],projection="polar") # left, bottom, width, height in fraction of fig
   axSP = fig.add_axes([0.07,0.02,0.86,0.3],projection="polar") # left, bottom, width, height in fraction of fig
@@ -560,13 +560,13 @@ if __name__ == "__main__":
 
   maps = [mMain,axNP,axSP]
   for m in maps:
-    #sm.drawStars(m)
+    sm.drawGrid(m)
     #sm.drawGb(m)
     #sm.drawGx(m)
     #sm.drawNb(m)
     #sm.drawOC(m)
     sm.drawConsts(m)
-    sm.drawGrid(m)
+    sm.drawStars(m)
 
-  fig.savefig('map.png')
+  #fig.savefig('map.png')
   fig.savefig('map.pdf')
