@@ -51,19 +51,19 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
     # x-axis
     tickPos = []
     tickLabel = []
-    nTicks = 12
+    nTicks = 24
     for iTick in numpy.arange(nTicks):
       pos = iTick*2*numpy.pi/nTicks
       label = iTick*360./nTicks-axis.zeroAt
-      if label > 180.:
+      if label < 0:
+        label += 360.
+      elif label > 360.:
         label -= 360.
-      tickPos.append(pos)
       if axis.projection[:2] == "np":
-        tickLabel.append(u"{0:.0f}\xb0".format(-label))
-      elif axis.projection[:2] == "sp":
-        tickLabel.append(u"{0:.0f}\xb0".format(label))
-      else:
-        raise Exception("Not np or sp")
+        label = 360.-label
+      label /= 15.
+      tickPos.append(pos)
+      tickLabel.append(u"{0:.0f}h".format(label))
     axis.set_xticks(tickPos)
     axis.set_xticklabels(tickLabel)
   return axis
@@ -481,8 +481,8 @@ class StarMapper(object):
 
   def drawGrid(self,basemap):
     if isinstance(basemap,Basemap):
-      basemap.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,True])
-      basemap.drawmeridians(numpy.arange(-180.,181.,60.),labels=[True,True,True])
+      basemap.drawparallels(numpy.arange(-90.,91.,30.),labels=[True,True,False,False])
+      basemap.drawmeridians(numpy.arange(-180.,181.,360/24.),labels=[False,False,True,True],fmt=lambda x: "{0:.0f}h".format(x/15.))
 
 if __name__ == "__main__":
 
@@ -570,4 +570,3 @@ if __name__ == "__main__":
 
   fig.savefig('map.png')
   fig.savefig('map.pdf')
-
