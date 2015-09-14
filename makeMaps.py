@@ -499,7 +499,7 @@ class StarMapper(object):
         )
       labels=[False,False,False,False]
       if label:
-        labels=[False,False,True,True],
+        labels=[False,False,True,True]
       basemap.drawmeridians(numpy.arange(-180.,181.,360/24.),
                             labels=labels,
                             fmt=lambda x: "{0:.0f}h".format(x/15.),
@@ -605,7 +605,7 @@ if __name__ == "__main__":
     #sm.drawGx(m)
     #sm.drawNb(m)
     #sm.drawOC(m)
-    #sm.drawStars(m)
+    sm.drawStars(m)
 
   fig.text(0.93,0.335,"Midnight\nZenith Month",size="small",ha="center",va="center")
   dataToDisplay = mMain.ax.transData
