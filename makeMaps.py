@@ -622,6 +622,12 @@ if __name__ == "__main__":
     months = ["Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov"]
     fig.text(xyFig[0],0.335,"{0}".format(months[iMonth]),ha="center",va="center")
 
+  for location,y in [("NM Skies",34.5),("GNV",29.5),("Spain",38.),("Australia",-31.25)]:
+    xyAxis = mMain(0,y)
+    xyDisplay = dataToDisplay.transform(xyAxis)
+    xyFig = displayToFigure.transform(xyDisplay)
+    fig.text(0.04,xyFig[1],"{0}".format(location),ha="right",va="center",size="small")
+
   #################################################
 
   axGb = fig.add_axes([0.75,0.03,0.2,0.08]) # left, bottom, width, height in fraction of fig
