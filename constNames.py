@@ -71,12 +71,15 @@ class ConstNames(object):
       if ax.rho_lim:
         if de > ax.rho_lim[1] or de < ax.rho_lim[0]:
           continue
+      else:
+        if de > ax.urcrnrlat or de < ax.llcrnrlat:
+          continue
       #print const, ra, de
       ra, de = ax.project(ra,de)
       try:
-        ax.text(ra,de,self.abbrevs[const],fontsize=6,va="center",ha="center")
+        ax.text(ra,de,self.abbrevs[const],fontsize=16,va="center",ha="center")
       except:
-        ax.ax.text(ra,de,self.abbrevs[const],fontsize=6,va="center",ha="center")
+        ax.ax.text(ra,de,self.abbrevs[const],fontsize=15,va="center",ha="center")
     
 
 if __name__ == "__main__":
