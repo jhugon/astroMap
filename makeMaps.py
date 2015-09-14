@@ -49,8 +49,9 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
         tickLabel.append(u"{0:.0f}\xb0".format(-90.+pos))
       else:
         raise Exception("Not np or sp")
-    axis.set_yticks(tickPos)
-    axis.set_yticklabels(tickLabel)
+    tickPos.pop(0)
+    tickLabel.pop(0)
+    axis.set_rgrids(tickPos,labels=tickLabel,angle=0.)
     if axis.projection[:2] == "np":
       axis.rho_lim = [90.-ylim[1],90.-ylim[0]]
     elif axis.projection[:2] == "sp":
