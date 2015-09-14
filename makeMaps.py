@@ -9,6 +9,7 @@ from mpl_toolkits.basemap import Basemap
 import numpy as numpy
 import matplotlib.pyplot as mpl
 import catalogCrossRef
+from constNames import ConstNames
 
 def polarAxisWrapper(axis,projection,zeroAt=0.):
   """
@@ -31,6 +32,7 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
     return mapTheta, mapRho
 
   axis.project = types.MethodType(project,axis)
+  axis.rho_lim = None
   if not isinstance(axis,Basemap):
     axis.projection = projection
     axis.zeroAt = zeroAt
@@ -48,6 +50,10 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
         raise Exception("Not np or sp")
     axis.set_yticks(tickPos)
     axis.set_yticklabels(tickLabel)
+    if axis.projection[:2] == "np":
+      axis.rho_lim = [90.-ylim[1],90.-ylim[0]]
+    elif axis.projection[:2] == "sp":
+      axis.rho_lim = [-90.+ylim[0],-90.+ylim[1]]
     # x-axis
     tickPos = []
     tickLabel = []
@@ -487,6 +493,7 @@ class StarMapper(object):
 if __name__ == "__main__":
 
   sm = StarMapper()
+  cns = ConstNames()
 
   basemapArgs = {
   
@@ -567,6 +574,7 @@ if __name__ == "__main__":
     #sm.drawOC(m)
     sm.drawConsts(m)
     sm.drawGrid(m)
+    cns.drawConstNames(m)
 
   fig.savefig('map.png')
   fig.savefig('map.pdf')
