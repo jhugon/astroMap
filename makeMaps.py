@@ -486,16 +486,22 @@ class StarMapper(object):
     mapx,mapy = basemap.project(self.ngcNb[:,0],self.ngcNb[:,1])
     basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
 
-  def drawGrid(self,basemap):
+  def drawGrid(self,basemap,label=True):
     if isinstance(basemap,Basemap):
+      labels=[False,False,False,False]
+      if label:
+        labels=[True,True,False,False]
       basemap.drawparallels(numpy.arange(-90.,91.,10.),
-                            labels=[True,True,False,False],
+                            labels=labels,
                             dashes=[],
                             color = '0.8'#,
                             #linewidth = 1.
         )
+      labels=[False,False,False,False]
+      if label:
+        labels=[False,False,True,True],
       basemap.drawmeridians(numpy.arange(-180.,181.,360/24.),
-                            labels=[False,False,True,True],
+                            labels=labels,
                             fmt=lambda x: "{0:.0f}h".format(x/15.),
                             dashes=[],
                             color = '0.8'#,
@@ -599,7 +605,7 @@ if __name__ == "__main__":
     #sm.drawGx(m)
     #sm.drawNb(m)
     #sm.drawOC(m)
-    sm.drawStars(m)
+    #sm.drawStars(m)
 
   fig.text(0.93,0.335,"Midnight\nZenith Month",size="small",ha="center",va="center")
   dataToDisplay = mMain.ax.transData
@@ -615,6 +621,60 @@ if __name__ == "__main__":
     iMonth %= 12
     months = ["Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov"]
     fig.text(xyFig[0],0.335,"{0}".format(months[iMonth]),ha="center",va="center")
+
+  #################################################
+
+  axGb = fig.add_axes([0.75,0.03,0.2,0.08]) # left, bottom, width, height in fraction of fig
+  axGx = fig.add_axes([0.75,0.13,0.2,0.08]) # left, bottom, width, height in fraction of fig
+  axOC = fig.add_axes([0.05,0.03,0.2,0.08]) # left, bottom, width, height in fraction of fig
+  axNb = fig.add_axes([0.05,0.13,0.2,0.08]) # left, bottom, width, height in fraction of fig
+
+  fig.text(0.85,0.11,"Globular Clusters",ha="center",va="bottom",size="large")
+  fig.text(0.85,0.21,"Galaxies",ha="center",va="bottom",size="large")
+  fig.text(0.15,0.11,"Open Clusters",ha="center",va="bottom",size="large")
+  fig.text(0.15,0.21,"Nebulae",ha="center",va="bottom",size="large")
+
+  mNb = sm.createMap({
+    'projection':'robin',
+    'lat_0':0,
+    'lon_0':0,
+    'ax':axNb,
+  })
+  mOC = sm.createMap({
+    'projection':'robin',
+    'lat_0':0,
+    'lon_0':0,
+    'ax':axOC,
+  })
+  mGb = sm.createMap({
+    'projection':'robin',
+    'lat_0':0,
+    'lon_0':0,
+    'ax':axGb,
+  })
+  mGx = sm.createMap({
+    'projection':'robin',
+    'lat_0':0,
+    'lon_0':0,
+    'ax':axGx,
+  })
+
+  polarAxisWrapper(mNb,"")
+  polarAxisWrapper(mOC,"")
+  polarAxisWrapper(mGb,"")
+  polarAxisWrapper(mGx,"")
+
+  sm.drawGrid(mNb,False)
+  sm.drawGrid(mOC,False)
+  sm.drawGrid(mGb,False)
+  sm.drawGrid(mGx,False)
+
+  sm.drawNb(mNb,c='k')
+  sm.drawOC(mOC,c='k')
+  sm.drawGb(mGb,c='k')
+  sm.drawGx(mGx,c='k')
+
+  #################################################
 
   fig.savefig('map.png')
   fig.savefig('map.pdf')
