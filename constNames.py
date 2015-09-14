@@ -63,7 +63,7 @@ class ConstNames(object):
       deCentroid = numpy.mean(des)
       self.centroids[const] = (raCentroid,deCentroid)
 
-  def drawConstNames(self,ax):
+  def drawConstNames(self,ax,color="k",fontsize=16.0):
     for const in self.centroids:
       ra, de = self.centroids[const]
       if ra > 180.:
@@ -77,9 +77,9 @@ class ConstNames(object):
       #print const, ra, de
       ra, de = ax.project(ra,de)
       try:
-        ax.text(ra,de,self.abbrevs[const],fontsize=16,va="center",ha="center")
+        ax.text(ra,de,self.abbrevs[const],fontsize=fontsize,va="center",ha="center",color=color)
       except:
-        ax.ax.text(ra,de,self.abbrevs[const],fontsize=15,va="center",ha="center")
+        ax.ax.text(ra,de,self.abbrevs[const],fontsize=fontsize,va="center",ha="center",color=color)
     
 
 if __name__ == "__main__":

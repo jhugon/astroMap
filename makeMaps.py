@@ -75,7 +75,7 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
     axis.set_thetagrids(tickPos,labels=tickLabel,frac=1.05)
   return axis
 
-def drawLinesAroundBounderies(ax,xs,ys,color=1,linestyle="-",marker=None,alpha=1.0,tooFar = 180.):
+def drawLinesAroundBounderies(ax,xs,ys,color='k',linestyle="-",marker=None,alpha=1.0,tooFar = 180.):
   def getSlopeIntercept(x1,y1,x2,y2):
     slope = (y2-y1)/(x2-x1)
     intercept = y1 - slope*x1
@@ -329,7 +329,7 @@ def readNGC(localFn="data/ngc2000.dat",url="ftp://cdsarc.u-strasbg.fr/pub/cats/V
   infile.close()
   return result
 
-def drawConstLines(baseMap):
+def drawConstLines(baseMap,color="k"):
   ccr = catalogCrossRef.CatalogCrossRef()
   lineFile = open("data/pp3Lines.dat")
   goodLines = []
@@ -360,7 +360,7 @@ def drawConstLines(baseMap):
       mapx,mapy = baseMap.project(ra,de)
       starXs.append(mapx)
       starYs.append(mapy)
-    drawLinesAroundBounderies(baseMap,starXs,starYs,color='0.5',linestyle='-',marker=None)
+    drawLinesAroundBounderies(baseMap,starXs,starYs,color=color,linestyle='-',marker=None)
 
 class ConstBoundaries(object):
   def __init__(self,localFn="data/bound_20.dat",url="ftp://cdsarc.u-strasbg.fr/cats/VI/49/bound_20.dat"):
@@ -409,7 +409,7 @@ class ConstBoundaries(object):
             constBoundRaw[cst] = [[RA,DE]]
     infile.close()
     self.constBoundRaw = constBoundRaw
-  def draw(self,baseMap):
+  def draw(self,baseMap,color="k"):
     constBoundRaw = self.constBoundRaw
     for cst in constBoundRaw:
       mapXs = []
@@ -419,7 +419,7 @@ class ConstBoundaries(object):
         mapXs.append(mapx)
         mapYs.append(mapy)
       #m.plot(mapXs,mapYs,"--c",alpha=0.7)
-      drawLinesAroundBounderies(baseMap,mapXs,mapYs,color='0.8',linestyle='-',marker=None)
+      drawLinesAroundBounderies(baseMap,mapXs,mapYs,color=color,linestyle='-',marker=None)
 
 class StarMapper(object):
 
@@ -470,8 +470,8 @@ class StarMapper(object):
     basemap.scatter(mapx,mapy,s=10./(numpy.sqrt(self.dataArray[:,2])),marker=".",c='k',linewidths=0)
 
   def drawConsts(self,basemap):
-    ConstBoundaries().draw(basemap)
-    drawConstLines(basemap)
+    ConstBoundaries().draw(basemap,color="0.7")
+    drawConstLines(basemap,color="0.3")
 
   def drawGx(self,basemap,c='r'):
     mapx,mapy = basemap.project(self.ngcGx[:,0],self.ngcGx[:,1])
@@ -488,13 +488,33 @@ class StarMapper(object):
 
   def drawGrid(self,basemap):
     if isinstance(basemap,Basemap):
-      basemap.drawparallels(numpy.arange(-90.,91.,10.),labels=[True,True,False,False])
-      basemap.drawmeridians(numpy.arange(-180.,181.,360/24.),labels=[False,False,True,True],fmt=lambda x: "{0:.0f}h".format(x/15.))
+      basemap.drawparallels(numpy.arange(-90.,91.,10.),
+                            labels=[True,True,False,False],
+                            dashes=[],
+                            color = '0.8'#,
+                            #linewidth = 1.
+        )
+      basemap.drawmeridians(numpy.arange(-180.,181.,360/24.),
+                            labels=[False,False,True,True],
+                            fmt=lambda x: "{0:.0f}h".format(x/15.),
+                            dashes=[],
+                            color = '0.8'#,
+                            #linewidth = 1.
+        )
+
+  def drawEcliptic(self,basemap,color="0.8",linestyle="-",marker=None):
+    xData = numpy.linspace(-180,180,1000)
+    yData = 23.44*numpy.sin(xData*numpy.pi/180.)
+    xsToPlot, ysToPlot = basemap.project(xData,yData)
+    basemap.plot(xsToPlot,ysToPlot,color=color,linestyle=linestyle,marker=marker)
 
 if __name__ == "__main__":
 
   rcParams["font.size"] = 20.0
   rcParams["font.family"] = "Optima Nova LT Pro"
+  rcParams["grid.linestyle"] = "-"
+  rcParams["grid.linewidth"] = 1
+  rcParams["grid.color"] = "0.8"
 
   sm = StarMapper()
   cns = ConstNames()
@@ -546,8 +566,8 @@ if __name__ == "__main__":
 
   fig = mpl.figure(figsize=(36,48),dpi=300)
   axMain = fig.add_axes([0.07,0.23,0.86,0.54]) # left, bottom, width, height in fraction of fig
-  axNP = fig.add_axes([0.07,0.7,0.86,0.28],projection="polar") # left, bottom, width, height in fraction of fig
-  axSP = fig.add_axes([0.07,0.02,0.86,0.28],projection="polar") # left, bottom, width, height in fraction of fig
+  axNP = fig.add_axes([0.07,0.69,0.86,0.28],projection="polar") # left, bottom, width, height in fraction of fig
+  axSP = fig.add_axes([0.07,0.03,0.86,0.28],projection="polar") # left, bottom, width, height in fraction of fig
   axSP.set_ylim(0,50)
   axSP.projection = "spaeqd"
   axNP.set_ylim(0,50)
@@ -578,7 +598,23 @@ if __name__ == "__main__":
     #sm.drawOC(m)
     sm.drawConsts(m)
     #sm.drawStars(m)
-    cns.drawConstNames(m)
+    sm.drawEcliptic(m)
+    cns.drawConstNames(m,fontsize="small",color="0.3")
 
-  #fig.savefig('map.png')
+  fig.text(0.93,0.335,"Midnight\nZenith Month",size="small",ha="center",va="center")
+  dataToDisplay = mMain.ax.transData
+  displayToFigure = fig.transFigure.inverted()
+  for iMonth in range(0,12):
+    iDegrees = iMonth*30
+    if iDegrees > 180:
+      iDegrees -= 360
+    xyAxis = mMain(iDegrees,0)
+    xyDisplay = dataToDisplay.transform(xyAxis)
+    xyFig = displayToFigure.transform(xyDisplay)
+    iMonth += 10
+    iMonth %= 12
+    months = ["Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov"]
+    fig.text(xyFig[0],0.335,"{0}".format(months[iMonth]),ha="center",va="center")
+
+  fig.savefig('map.png')
   fig.savefig('map.pdf')
