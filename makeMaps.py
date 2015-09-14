@@ -72,7 +72,7 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
       label /= 15.
       tickPos.append(pos)
       tickLabel.append(u"{0:.0f}h".format(label))
-    axis.set_thetagrids(tickPos,labels=tickLabel,frac=1.1)
+    axis.set_thetagrids(tickPos,labels=tickLabel,frac=1.05)
   return axis
 
 def drawLinesAroundBounderies(ax,xs,ys,color=1,linestyle="-",marker=None,alpha=1.0,tooFar = 180.):
@@ -545,9 +545,9 @@ if __name__ == "__main__":
   ######################################################
 
   fig = mpl.figure(figsize=(36,48),dpi=300)
-  axMain = fig.add_axes([0.07,0.3,0.86,0.4]) # left, bottom, width, height in fraction of fig
-  axNP = fig.add_axes([0.07,0.68,0.86,0.3],projection="polar") # left, bottom, width, height in fraction of fig
-  axSP = fig.add_axes([0.07,0.02,0.86,0.3],projection="polar") # left, bottom, width, height in fraction of fig
+  axMain = fig.add_axes([0.07,0.23,0.86,0.54]) # left, bottom, width, height in fraction of fig
+  axNP = fig.add_axes([0.07,0.7,0.86,0.28],projection="polar") # left, bottom, width, height in fraction of fig
+  axSP = fig.add_axes([0.07,0.02,0.86,0.28],projection="polar") # left, bottom, width, height in fraction of fig
   axSP.set_ylim(0,50)
   axSP.projection = "spaeqd"
   axNP.set_ylim(0,50)
