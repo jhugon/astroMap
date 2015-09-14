@@ -59,7 +59,7 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
     tickLabel = []
     nTicks = 24
     for iTick in numpy.arange(nTicks):
-      pos = iTick*2*numpy.pi/nTicks
+      pos = iTick*360./nTicks
       label = iTick*360./nTicks-axis.zeroAt
       if label < 0:
         label += 360.
@@ -70,8 +70,7 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
       label /= 15.
       tickPos.append(pos)
       tickLabel.append(u"{0:.0f}h".format(label))
-    axis.set_xticks(tickPos)
-    axis.set_xticklabels(tickLabel)
+    axis.set_thetagrids(tickPos,labels=tickLabel,frac=1.1)
   return axis
 
 def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
