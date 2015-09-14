@@ -66,8 +66,6 @@ class ConstNames(object):
   def drawConstNames(self,ax):
     for const in self.centroids:
       ra, de = self.centroids[const]
-      if const == "Ori":
-        print ra,de
       if ra > 180.:
         ra -= 360.
       if ax.rho_lim:
