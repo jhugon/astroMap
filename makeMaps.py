@@ -8,6 +8,7 @@ import types
 from mpl_toolkits.basemap import Basemap
 import numpy as numpy
 import matplotlib.pyplot as mpl
+from matplotlib import rcParams
 import catalogCrossRef
 from constNames import ConstNames
 
@@ -491,6 +492,9 @@ class StarMapper(object):
       basemap.drawmeridians(numpy.arange(-180.,181.,360/24.),labels=[False,False,True,True],fmt=lambda x: "{0:.0f}h".format(x/15.))
 
 if __name__ == "__main__":
+
+  rcParams["font.size"] = 20.0
+  rcParams["font.family"] = "Optima Nova LT Pro"
 
   sm = StarMapper()
   cns = ConstNames()
