@@ -592,14 +592,14 @@ if __name__ == "__main__":
   maps = [mMain,axNP,axSP]
   for m in maps:
     sm.drawGrid(m)
+    sm.drawEcliptic(m)
+    sm.drawConsts(m)
+    cns.drawConstNames(m,fontsize="small",color="0.3")
     #sm.drawGb(m)
     #sm.drawGx(m)
     #sm.drawNb(m)
     #sm.drawOC(m)
-    sm.drawConsts(m)
-    #sm.drawStars(m)
-    sm.drawEcliptic(m)
-    cns.drawConstNames(m,fontsize="small",color="0.3")
+    sm.drawStars(m)
 
   fig.text(0.93,0.335,"Midnight\nZenith Month",size="small",ha="center",va="center")
   dataToDisplay = mMain.ax.transData
