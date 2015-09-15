@@ -477,8 +477,8 @@ class StarMapper(object):
     basemap.scatter(mapx,mapy,s=sizes,marker=".",facecolor="0.9",edgecolor="0.9",lw=0)
 
   def drawConsts(self,basemap):
-    ConstBoundaries().draw(basemap,color="0.5")
-    drawConstLines(basemap,color="k",linewidth=2)
+    ConstBoundaries().draw(basemap,color="0.6")
+    drawConstLines(basemap,color="k",linewidth=1.5)
 
   def drawGx(self,basemap,c='r'):
     mapx,mapy = basemap.project(self.ngcGx[:,0],self.ngcGx[:,1])
@@ -493,7 +493,7 @@ class StarMapper(object):
     mapx,mapy = basemap.project(self.ngcNb[:,0],self.ngcNb[:,1])
     basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
 
-  def drawGrid(self,basemap,label=True,color="0.75"):
+  def drawGrid(self,basemap,label=True,color="0.85"):
     if isinstance(basemap,Basemap):
       labels=[False,False,False,False]
       if label:
@@ -515,7 +515,7 @@ class StarMapper(object):
                             #linewidth = 1.
         )
 
-  def drawEcliptic(self,basemap,color="0.75",linestyle="-",marker=None):
+  def drawEcliptic(self,basemap,color="0.85",linestyle="-",marker=None):
     xData = numpy.linspace(-180,180,1000)
     yData = 23.44*numpy.sin(xData*numpy.pi/180.)
     xsToPlot, ysToPlot = basemap.project(xData,yData)
@@ -527,7 +527,7 @@ if __name__ == "__main__":
   rcParams["font.family"] = "Optima Nova LT Pro"
   rcParams["grid.linestyle"] = "-"
   rcParams["grid.linewidth"] = 1
-  rcParams["grid.color"] = "0.75"
+  rcParams["grid.color"] = "0.85"
 
   sm = StarMapper()
   cns = ConstNames()
@@ -612,7 +612,7 @@ if __name__ == "__main__":
     #sm.drawGx(m)
     #sm.drawNb(m)
     #sm.drawOC(m)
-    sm.drawStars(m)
+    #sm.drawStars(m)
 
   fig.text(0.93,0.335,"Midnight\nZenith Month",size="small",ha="center",va="center")
   dataToDisplay = mMain.ax.transData
@@ -635,59 +635,59 @@ if __name__ == "__main__":
     xyFig = displayToFigure.transform(xyDisplay)
     fig.text(0.04,xyFig[1],"{0}".format(location),ha="right",va="center",size="small")
 
-  #################################################
+  ##################################################
 
-  axGb = fig.add_axes([0.75,0.03,0.2,0.08]) # left, bottom, width, height in fraction of fig
-  axGx = fig.add_axes([0.75,0.13,0.2,0.08]) # left, bottom, width, height in fraction of fig
-  axOC = fig.add_axes([0.05,0.03,0.2,0.08]) # left, bottom, width, height in fraction of fig
-  axNb = fig.add_axes([0.05,0.13,0.2,0.08]) # left, bottom, width, height in fraction of fig
+  #axGb = fig.add_axes([0.75,0.03,0.2,0.08]) # left, bottom, width, height in fraction of fig
+  #axGx = fig.add_axes([0.75,0.13,0.2,0.08]) # left, bottom, width, height in fraction of fig
+  #axOC = fig.add_axes([0.05,0.03,0.2,0.08]) # left, bottom, width, height in fraction of fig
+  #axNb = fig.add_axes([0.05,0.13,0.2,0.08]) # left, bottom, width, height in fraction of fig
 
-  fig.text(0.85,0.11,"Globular Clusters",ha="center",va="bottom",size="large")
-  fig.text(0.85,0.21,"Galaxies",ha="center",va="bottom",size="large")
-  fig.text(0.15,0.11,"Open Clusters",ha="center",va="bottom",size="large")
-  fig.text(0.15,0.21,"Nebulae",ha="center",va="bottom",size="large")
+  #fig.text(0.85,0.11,"Globular Clusters",ha="center",va="bottom",size="large")
+  #fig.text(0.85,0.21,"Galaxies",ha="center",va="bottom",size="large")
+  #fig.text(0.15,0.11,"Open Clusters",ha="center",va="bottom",size="large")
+  #fig.text(0.15,0.21,"Nebulae",ha="center",va="bottom",size="large")
 
-  mNb = sm.createMap({
-    'projection':'robin',
-    'lat_0':0,
-    'lon_0':0,
-    'ax':axNb,
-  })
-  mOC = sm.createMap({
-    'projection':'robin',
-    'lat_0':0,
-    'lon_0':0,
-    'ax':axOC,
-  })
-  mGb = sm.createMap({
-    'projection':'robin',
-    'lat_0':0,
-    'lon_0':0,
-    'ax':axGb,
-  })
-  mGx = sm.createMap({
-    'projection':'robin',
-    'lat_0':0,
-    'lon_0':0,
-    'ax':axGx,
-  })
+  #mNb = sm.createMap({
+  #  'projection':'robin',
+  #  'lat_0':0,
+  #  'lon_0':0,
+  #  'ax':axNb,
+  #})
+  #mOC = sm.createMap({
+  #  'projection':'robin',
+  #  'lat_0':0,
+  #  'lon_0':0,
+  #  'ax':axOC,
+  #})
+  #mGb = sm.createMap({
+  #  'projection':'robin',
+  #  'lat_0':0,
+  #  'lon_0':0,
+  #  'ax':axGb,
+  #})
+  #mGx = sm.createMap({
+  #  'projection':'robin',
+  #  'lat_0':0,
+  #  'lon_0':0,
+  #  'ax':axGx,
+  #})
 
-  polarAxisWrapper(mNb,"")
-  polarAxisWrapper(mOC,"")
-  polarAxisWrapper(mGb,"")
-  polarAxisWrapper(mGx,"")
+  #polarAxisWrapper(mNb,"")
+  #polarAxisWrapper(mOC,"")
+  #polarAxisWrapper(mGb,"")
+  #polarAxisWrapper(mGx,"")
 
-  sm.drawGrid(mNb,False)
-  sm.drawGrid(mOC,False)
-  sm.drawGrid(mGb,False)
-  sm.drawGrid(mGx,False)
+  #sm.drawGrid(mNb,False)
+  #sm.drawGrid(mOC,False)
+  #sm.drawGrid(mGb,False)
+  #sm.drawGrid(mGx,False)
 
-  sm.drawNb(mNb,c='k')
-  sm.drawOC(mOC,c='k')
-  sm.drawGb(mGb,c='k')
-  sm.drawGx(mGx,c='k')
+  #sm.drawNb(mNb,c='k')
+  #sm.drawOC(mOC,c='k')
+  #sm.drawGb(mGb,c='k')
+  #sm.drawGx(mGx,c='k')
 
-  #################################################
+  ##################################################
 
   fig.savefig('map.png')
   fig.savefig('map.pdf')
