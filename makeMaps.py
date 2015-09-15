@@ -75,7 +75,7 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
     axis.set_thetagrids(tickPos,labels=tickLabel,frac=1.05)
   return axis
 
-def drawLinesAroundBounderies(ax,xs,ys,color='k',linestyle="-",marker=None,alpha=1.0,tooFar = 180.):
+def drawLinesAroundBounderies(ax,xs,ys,color='k',linestyle="-",marker=None,alpha=1.0,tooFar = 180.,linewidth=1):
   def getSlopeIntercept(x1,y1,x2,y2):
     slope = (y2-y1)/(x2-x1)
     intercept = y1 - slope*x1
@@ -93,12 +93,12 @@ def drawLinesAroundBounderies(ax,xs,ys,color='k',linestyle="-",marker=None,alpha
   ]
 
   if not isinstance(ax,Basemap):
-    ax.plot(xs,ys,alpha=alpha,color=color,linestyle=linestyle,marker=marker)
+    ax.plot(xs,ys,alpha=alpha,color=color,linestyle=linestyle,marker=marker,linewidth=linewidth)
     return 
 
   for badProj in badList:
     if ax.projection == badProj:
-      ax.plot(xs,ys,alpha=alpha,color=color,linestyle=linestyle,marker=marker)
+      ax.plot(xs,ys,alpha=alpha,color=color,linestyle=linestyle,marker=marker,linewidth=linewidth)
       return 
 
   nPoints = len(xs)
@@ -181,7 +181,7 @@ def drawLinesAroundBounderies(ax,xs,ys,color='k',linestyle="-",marker=None,alpha
             xsLists.append([xRight])
             ysLists.append([yRight])
     for xsToPlot, ysToPlot in zip(xsLists,ysLists):
-      ax.plot(xsToPlot,ysToPlot,alpha=alpha,color=color,linestyle=linestyle,marker=marker)
+      ax.plot(xsToPlot,ysToPlot,alpha=alpha,color=color,linestyle=linestyle,marker=marker,linewidth=linewidth)
 
 class HipEntry(object):
   def __init__(self,row):
@@ -329,7 +329,7 @@ def readNGC(localFn="data/ngc2000.dat",url="ftp://cdsarc.u-strasbg.fr/pub/cats/V
   infile.close()
   return result
 
-def drawConstLines(baseMap,color="k"):
+def drawConstLines(baseMap,color="k",linewidth=1):
   ccr = catalogCrossRef.CatalogCrossRef()
   lineFile = open("data/pp3Lines.dat")
   goodLines = []
@@ -360,7 +360,7 @@ def drawConstLines(baseMap,color="k"):
       mapx,mapy = baseMap.project(ra,de)
       starXs.append(mapx)
       starYs.append(mapy)
-    drawLinesAroundBounderies(baseMap,starXs,starYs,color=color,linestyle='-',marker=None)
+    drawLinesAroundBounderies(baseMap,starXs,starYs,color=color,linestyle='-',marker=None,linewidth=linewidth)
 
 class ConstBoundaries(object):
   def __init__(self,localFn="data/bound_20.dat",url="ftp://cdsarc.u-strasbg.fr/cats/VI/49/bound_20.dat"):
@@ -409,7 +409,7 @@ class ConstBoundaries(object):
             constBoundRaw[cst] = [[RA,DE]]
     infile.close()
     self.constBoundRaw = constBoundRaw
-  def draw(self,baseMap,color="k"):
+  def draw(self,baseMap,color="k",linewidth=1):
     constBoundRaw = self.constBoundRaw
     for cst in constBoundRaw:
       mapXs = []
@@ -419,7 +419,7 @@ class ConstBoundaries(object):
         mapXs.append(mapx)
         mapYs.append(mapy)
       #m.plot(mapXs,mapYs,"--c",alpha=0.7)
-      drawLinesAroundBounderies(baseMap,mapXs,mapYs,color=color,linestyle='-',marker=None)
+      drawLinesAroundBounderies(baseMap,mapXs,mapYs,color=color,linestyle='-',marker=None,linewidth=linewidth)
 
 class StarMapper(object):
 
@@ -466,12 +466,19 @@ class StarMapper(object):
     return m
 
   def drawStars(self,basemap):
+    #self.dataArray=self.dataArray[:15000]
     mapx,mapy = basemap.project(self.dataArray[:,0],self.dataArray[:,1])
-    basemap.scatter(mapx,mapy,s=10./(numpy.sqrt(self.dataArray[:,2])),marker=".",c='k',linewidths=0)
+    mags = self.dataArray[:,2]
+    maxSize = 300.0
+    minSize = 5.0
+    maxMag = max(mags)
+    minMag = min(mags)
+    sizes = (maxMag-mags)*(maxSize-minSize)/(maxMag-minMag)+minSize
+    basemap.scatter(mapx,mapy,s=sizes,marker=".",facecolor="0.9",edgecolor="0.9",lw=0)
 
   def drawConsts(self,basemap):
-    ConstBoundaries().draw(basemap,color="0.7")
-    drawConstLines(basemap,color="0.3")
+    ConstBoundaries().draw(basemap,color="0.5")
+    drawConstLines(basemap,color="k",linewidth=2)
 
   def drawGx(self,basemap,c='r'):
     mapx,mapy = basemap.project(self.ngcGx[:,0],self.ngcGx[:,1])
@@ -486,7 +493,7 @@ class StarMapper(object):
     mapx,mapy = basemap.project(self.ngcNb[:,0],self.ngcNb[:,1])
     basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
 
-  def drawGrid(self,basemap,label=True):
+  def drawGrid(self,basemap,label=True,color="0.75"):
     if isinstance(basemap,Basemap):
       labels=[False,False,False,False]
       if label:
@@ -494,7 +501,7 @@ class StarMapper(object):
       basemap.drawparallels(numpy.arange(-90.,91.,10.),
                             labels=labels,
                             dashes=[],
-                            color = '0.8'#,
+                            color = color#,
                             #linewidth = 1.
         )
       labels=[False,False,False,False]
@@ -504,11 +511,11 @@ class StarMapper(object):
                             labels=labels,
                             fmt=lambda x: "{0:.0f}h".format(x/15.),
                             dashes=[],
-                            color = '0.8'#,
+                            color = color#,
                             #linewidth = 1.
         )
 
-  def drawEcliptic(self,basemap,color="0.8",linestyle="-",marker=None):
+  def drawEcliptic(self,basemap,color="0.75",linestyle="-",marker=None):
     xData = numpy.linspace(-180,180,1000)
     yData = 23.44*numpy.sin(xData*numpy.pi/180.)
     xsToPlot, ysToPlot = basemap.project(xData,yData)
@@ -520,7 +527,7 @@ if __name__ == "__main__":
   rcParams["font.family"] = "Optima Nova LT Pro"
   rcParams["grid.linestyle"] = "-"
   rcParams["grid.linewidth"] = 1
-  rcParams["grid.color"] = "0.8"
+  rcParams["grid.color"] = "0.75"
 
   sm = StarMapper()
   cns = ConstNames()
@@ -600,7 +607,7 @@ if __name__ == "__main__":
     sm.drawGrid(m)
     sm.drawEcliptic(m)
     sm.drawConsts(m)
-    cns.drawConstNames(m,fontsize="small",color="0.3")
+    cns.drawConstNames(m,fontsize="small",color="k",weight="bold")
     #sm.drawGb(m)
     #sm.drawGx(m)
     #sm.drawNb(m)
