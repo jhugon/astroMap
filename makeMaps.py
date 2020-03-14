@@ -363,10 +363,10 @@ def drawConstLines(baseMap,color="k",linewidth=1):
     drawLinesAroundBounderies(baseMap,starXs,starYs,color=color,linestyle='-',marker=None,linewidth=linewidth)
 
 class ConstBoundaries(object):
-  def __init__(self,localFn="data/bound_20.dat",url="ftp://cdsarc.u-strasbg.fr/cats/VI/49/bound_20.dat"):
+  def __init__(self,localFn="data/bound_20.dat",url="ftp://cdsarc.u-strasbg.fr/cats/VI/49/bound_20.dat.gz"):
     infile = None
     try:
-      infile = open(localFn)
+      infile = gzip.GzipFile(localFn)
     except:
       print "ConstBoundaries: Couldn't find local data file, attempting to download..."
       infile = None
@@ -390,7 +390,7 @@ class ConstBoundaries(object):
             print status,
         infile.close()
         print "Done downloading %s to %s" % (url, localFn)
-        infile = open(localFn)
+        infile = gzip.GzipFile(localFn)
       except:
         print "Error in ConstBoundaries: Couldn't find local data file and couldn't download"
         sys.exit(1)
