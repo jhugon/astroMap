@@ -521,6 +521,18 @@ class StarMapper(object):
     xsToPlot, ysToPlot = basemap.project(xData,yData)
     basemap.plot(xsToPlot,ysToPlot,color=color,linestyle=linestyle,marker=marker)
 
+  def drawRADE(self,basemap,RA,DE,title=""):
+    """
+    RA is right ascension in decimal hours
+    DE is declination in decimal degrees
+    """
+    RA *= 15 # convert RA from h to deg
+    if RA > 180.:
+      RA -= 360.
+    mapx,mapy = basemap.project(RA,DE)
+    basemap.scatter(mapx,mapy,marker="o",s=100,facecolor='b',lw=0)
+    #basemap.annotate(title,xy=(mapx,mapy),ha='right',va='top')
+
 if __name__ == "__main__":
 
   rcParams["font.size"] = 20.0
@@ -607,6 +619,7 @@ if __name__ == "__main__":
     sm.drawGrid(m)
     sm.drawEcliptic(m)
     sm.drawConsts(m)
+    sm.drawRADE(m,23.2,57.2,"HD219134")
     cns.drawConstNames(m,fontsize="small",color="k",weight="bold")
     #sm.drawGb(m)
     #sm.drawGx(m)
@@ -629,7 +642,7 @@ if __name__ == "__main__":
     months = ["Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov"]
     fig.text(xyFig[0],0.335,"{0}".format(months[iMonth]),ha="center",va="center")
 
-  for location,y in [("NM Skies",34.5),("GNV",29.5),("Spain",38.),("Australia",-31.25)]:
+  for location,y in [("ATL",33.9),("Spain",38.),("Australia",-31.25)]:
     xyAxis = mMain(0,y)
     xyDisplay = dataToDisplay.transform(xyAxis)
     xyFig = displayToFigure.transform(xyDisplay)
