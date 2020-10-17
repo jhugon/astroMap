@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-import urllib2
+import requests
 import sys
 import sqlalchemy
 from sqlalchemy import Column, Integer, String, Float
@@ -62,18 +62,18 @@ class CrossRefEntry(Base):
   def getCst(self): return self.Cst
 
 class CatalogCrossRef(object):
-  def __init__(self,localFn="data/crossRefCat.dat",url="ftp://cdsarc.u-strasbg.fr/pub/cats/IV/27A/catalog.dat"):
+  def __init__(self,localFn="data/crossRefCat.dat",url="https://cdsarc.unistra.fr/ftp/IV/27A/catalog.dat"):
     self.localFile = None
     try:
       self.localFile = open(localFn)
     except:
-      print "CatalogCrossRef: Couldn't find local data file, attempting to download..."
+      print(f"CatalogCrossRef: Couldn't find local data file {localFn}, attempting to download {url}")
       self.localFile = None
       try:
         self.download(localFn,url)
         self.localFile = open(localFn)
       except:
-        print "Error in CatalogCrossRef: Couldn't find local data file and couldn't download"
+        print("Error in CatalogCrossRef: Couldn't find local data file and couldn't download")
         sys.exit(1)
 
     ## Now DB stuff
@@ -127,25 +127,13 @@ class CatalogCrossRef(object):
     session.flush()
 
   def download(self,localFn,url):
-    u = urllib2.urlopen(url)
-    f = open(localFn, 'wb')
-    meta = u.info()
-    file_size = int(meta.getheaders("Content-Length")[0])
-    print "Downloading: %s Bytes: %s" % (url, file_size)
-    
-    file_size_dl = 0
-    block_sz = 8192
-    while True:
-        buffer = u.read(block_sz)
-        if not buffer:
-            break
-        file_size_dl += len(buffer)
-        f.write(buffer)
-        status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-        status = status + chr(8)*(len(status)+1)
-        print status,
-    f.close()
-    print "Done downloading %s to %s" % (url, localFn)
+    r = requests.get(url)
+    if r.status_code != 200:
+      raise Exception(f"Couldn't download '{url}', status_code: {r.status_code}, text: '{r.text}'")
+    infile = open(localFn, 'wb')
+    infile.write(r.content)
+    infile.close()
+    print("Done downloading %s to %s" % (url, localFn))
 
   def findByHD(self,HD):
     session = self.Session()
@@ -166,21 +154,21 @@ class CatalogCrossRef(object):
 
 if __name__ == "__main__":
   ccr = CatalogCrossRef()
-  print "CAS 45:",ccr.findByFl("CAS",45)
-  print "VIR 3:",ccr.findByFl("VIR",3)
-  print "HD 20010:",ccr.findByHD(20010)
-  print "HD 175813:",ccr.findByHD(175813)
-  print "Should be same:",ccr.findByHD(20010),ccr.findByFl("FOR",1),ccr.findByBayer("FOR","ALF")
-  print "Should be same:",ccr.findByHD(36597),ccr.findByFl("Col",1),ccr.findByBayer("Col","ALF")
-  print "Should be same:",ccr.findByHD(43834),ccr.findByFl("Men",1),ccr.findByBayer("Men","Alf")
-  print
-  print "For Vir 3:"
+  print("CAS 45:",ccr.findByFl("CAS",45))
+  print("VIR 3:",ccr.findByFl("VIR",3))
+  print("HD 20010:",ccr.findByHD(20010))
+  print("HD 175813:",ccr.findByHD(175813))
+  print("Should be same:",ccr.findByHD(20010),ccr.findByFl("FOR",1),ccr.findByBayer("FOR","ALF"))
+  print("Should be same:",ccr.findByHD(36597),ccr.findByFl("Col",1),ccr.findByBayer("Col","ALF"))
+  print("Should be same:",ccr.findByHD(43834),ccr.findByFl("Men",1),ccr.findByBayer("Men","Alf"))
+  print()
+  print("For Vir 3:")
   vir3 = ccr.findByFl("VIR",3)
-  print " RA:",vir3.getRAhms()," DE:",vir3.getDEdms()
-  print " RA:",vir3.getRAd()," DE:",vir3.getDEd()
-  print " HD: ",vir3.getHD(), "Vmag: ",vir3.getVmag()
-  print "For Vir 3:"
+  print(" RA:",vir3.getRAhms()," DE:",vir3.getDEdms())
+  print(" RA:",vir3.getRAd()," DE:",vir3.getDEd())
+  print(" HD: ",vir3.getHD(), "Vmag: ",vir3.getVmag())
+  print("For Vir 3:")
   hd352 = ccr.findByHD(352)
-  print " RA:",hd352.getRAhms()," DE:",hd352.getDEdms()
-  print " RA:",hd352.getRAd()," DE:",hd352.getDEd()
-  print "  HIP:",hd352.getHIP(), "Vmag: ",hd352.getVmag()
+  print(" RA:",hd352.getRAhms()," DE:",hd352.getDEdms())
+  print(" RA:",hd352.getRAd()," DE:",hd352.getDEd())
+  print("  HIP:",hd352.getHIP(), "Vmag: ",hd352.getVmag())
