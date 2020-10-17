@@ -71,7 +71,7 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
       label /= 15.
       tickPos.append(pos)
       tickLabel.append("{0:.0f}h".format(label))
-    #axis.set_thetagrids(tickPos,labels=tickLabel,frac=1.1)
+    axis.set_thetagrids(tickPos,labels=tickLabel)#,frac=1.1)
   return axis
 
 def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
