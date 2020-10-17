@@ -2,7 +2,7 @@
 
 import sys
 import re
-import urllib2
+import requests
 import gzip
 import types
 from mpl_toolkits.basemap import Basemap
@@ -43,9 +43,9 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
     for pos in numpy.arange(ylim[0],ylim[1],15):
       tickPos.append(pos)
       if axis.projection[:2] == "np":
-        tickLabel.append(u"{0:.0f}\xb0".format(90.-pos))
+        tickLabel.append("{0:.0f}\xb0".format(90.-pos))
       elif axis.projection[:2] == "sp":
-        tickLabel.append(u"{0:.0f}\xb0".format(-90.+pos))
+        tickLabel.append("{0:.0f}\xb0".format(-90.+pos))
       else:
         raise Exception("Not np or sp")
     tickPos.pop(0)
@@ -70,8 +70,8 @@ def polarAxisWrapper(axis,projection,zeroAt=0.):
         label = 360.-label
       label /= 15.
       tickPos.append(pos)
-      tickLabel.append(u"{0:.0f}h".format(label))
-    axis.set_thetagrids(tickPos,labels=tickLabel,frac=1.1)
+      tickLabel.append("{0:.0f}h".format(label))
+    #axis.set_thetagrids(tickPos,labels=tickLabel,frac=1.1)
   return axis
 
 def drawLinesAroundBounderies(ax,xs,ys,styleStr,alpha=1.0,tooFar = 180.):
@@ -228,43 +228,6 @@ class HipEntry(object):
     result = "{0:7} {1:10.4f} {2:10.4f} {3:10.4f} {4:10.4f} {5:10.4f}".format(self.HIP,self.RA,self.DE,self.Plx,self.Vmag,self.BmV)
     return result
 
-def readHip(localFn="data/hip_main.dat",url="ftp://cdsarc.u-strasbg.fr/pub/cats/I/239/hip_main.dat.gz"):
-  result = []
-  infile = None
-  try:
-    infile = gzip.GzipFile(localFn)
-  except:
-    print "readHip: Couldn't find local data file, attempting to download..."
-    infile = None
-    try:
-      u = urllib2.urlopen(url)
-      infile = open(localFn, 'wb')
-      meta = u.info()
-      file_size = int(meta.getheaders("Content-Length")[0])
-      print "Downloading: %s Bytes: %s" % (url, file_size)
-      
-      file_size_dl = 0
-      block_sz = 8192
-      while True:
-          buffer = u.read(block_sz)
-          if not buffer:
-              break
-          file_size_dl += len(buffer)
-          infile.write(buffer)
-          status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-          status = status + chr(8)*(len(status)+1)
-          print status,
-      infile.close()
-      print "Done downloading %s to %s" % (url, localFn)
-      infile = gzip.GzipFile(localFn)
-    except:
-      print "Error in readHip: Couldn't find local data file and couldn't download"
-      sys.exit(1)
-  for row in infile:
-    result.append(HipEntry(row))
-  infile.close()
-  return result
-
 class NGCEntry(object):
   def __init__(self,row):
     self.NGC = row[0:5]  # NGC or IC number
@@ -290,43 +253,6 @@ class NGCEntry(object):
 
   def getNGC(self):
     return self.NGC
-
-def readNGC(localFn="data/ngc2000.dat",url="ftp://cdsarc.u-strasbg.fr/pub/cats/VII/118/ngc2000.dat"):
-  result = []
-  infile = None
-  try:
-    infile = open(localFn)
-  except:
-    print "readNGC: Couldn't find local data file, attempting to download..."
-    infile = None
-    try:
-      u = urllib2.urlopen(url)
-      infile = open(localFn, 'wb')
-      meta = u.info()
-      file_size = int(meta.getheaders("Content-Length")[0])
-      print "Downloading: %s Bytes: %s" % (url, file_size)
-      
-      file_size_dl = 0
-      block_sz = 8192
-      while True:
-          buffer = u.read(block_sz)
-          if not buffer:
-              break
-          file_size_dl += len(buffer)
-          infile.write(buffer)
-          status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-          status = status + chr(8)*(len(status)+1)
-          print status,
-      infile.close()
-      print "Done downloading %s to %s" % (url, localFn)
-      infile = open(localFn)
-    except:
-      print "Error in readNGC: Couldn't find local data file and couldn't download"
-      sys.exit(1)
-  for row in infile:
-    result.append(NGCEntry(row))
-  infile.close()
-  return result
 
 def drawConstLines(baseMap):
   ccr = catalogCrossRef.CatalogCrossRef()
@@ -362,36 +288,24 @@ def drawConstLines(baseMap):
     drawLinesAroundBounderies(baseMap,starXs,starYs,"-m",alpha=0.7)
 
 class ConstBoundaries(object):
-  def __init__(self,localFn="data/bound_20.dat",url="ftp://cdsarc.u-strasbg.fr/cats/VI/49/bound_20.dat.gz"):
+  def __init__(self,localFn="data/bound_20.dat",url="https://cdsarc.unistra.fr/ftp/VI/49/bound_20.dat.gz"):
     infile = None
     try:
       infile = gzip.GzipFile(localFn)
     except:
-      print "ConstBoundaries: Couldn't find local data file, attempting to download..."
+      print(f"ConstBoundaries: Couldn't find local data file '{localFn}', attempting to download '{url}'...")
       infile = None
       try:
-        u = urllib2.urlopen(url)
+        r = requests.get(url)
+        if r.status_code != 200:
+          raise Exception(f"Couldn't download '{url}', status_code: {r.status_code}")
         infile = open(localFn, 'wb')
-        meta = u.info()
-        file_size = int(meta.getheaders("Content-Length")[0])
-        print "Downloading: %s Bytes: %s" % (url, file_size)
-        
-        file_size_dl = 0
-        block_sz = 8192
-        while True:
-            buffer = u.read(block_sz)
-            if not buffer:
-                break
-            file_size_dl += len(buffer)
-            infile.write(buffer)
-            status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-            status = status + chr(8)*(len(status)+1)
-            print status,
+        infile.write(r.content)
+        print("Done downloading %s to %s" % (url, localFn))
         infile.close()
-        print "Done downloading %s to %s" % (url, localFn)
         infile = gzip.GzipFile(localFn)
-      except:
-        print "Error in ConstBoundaries: Couldn't find local data file and couldn't download"
+      except Exception as e:
+        print(f"Error in ConstBoundaries: Couldn't find local data file and couldn't download. {e}")
         sys.exit(1)
     constBoundRaw = {}
     for row in infile:
@@ -402,12 +316,13 @@ class ConstBoundaries(object):
         RA = RAh * 15.
         if RA > 180.:
             RA -= 360.
-        if constBoundRaw.has_key(cst):
+        if cst in constBoundRaw:
             constBoundRaw[cst].append([RA,DE])
         else:
             constBoundRaw[cst] = [[RA,DE]]
     infile.close()
     self.constBoundRaw = constBoundRaw
+
   def draw(self,baseMap):
     constBoundRaw = self.constBoundRaw
     for cst in constBoundRaw:
@@ -419,6 +334,39 @@ class ConstBoundaries(object):
         mapYs.append(mapy)
       #m.plot(mapXs,mapYs,"--c",alpha=0.7)
       drawLinesAroundBounderies(baseMap,mapXs,mapYs,"-c")
+
+def readCatalog(localFn,url,processLineFunc):
+  result = []
+  infile = None
+  try:
+    infile = open(localFn)
+  except:
+    print(f"readCatalog: Couldn't find local data file '{localFn}', attempting to download '{url}'...")
+    infile = None
+    try:
+      r = requests.get(url)
+      if r.status_code != 200:
+        raise Exception(f"Couldn't download '{url}', status_code: {r.status_code}, text: '{r.text}'")
+      infile = open(localFn, 'wb')
+      infile.write(r.content)
+      print("Done downloading %s to %s" % (url, localFn))
+      infile.close()
+      infile = open(localFn)
+    except Exception as e:
+      print(f"Error in readCatalog: Couldn't find local data file and couldn't download b/c: {e}")
+      print("Exiting.")
+      sys.exit(1)
+  for row in infile:
+    result.append(processLineFunc(row))
+  infile.close()
+  return result
+
+def readHip():
+  return readCatalog("data/hip_main.dat","https://cdsarc.unistra.fr/ftp/I/239/hip_main.dat",HipEntry)
+
+def readNGC():
+  return readCatalog("data/ngc2000.dat","https://cdsarc.unistra.fr/ftp/VII/118/ngc2000.dat",NGCEntry)
+
 
 class StarMapper(object):
 
