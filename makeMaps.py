@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import re
@@ -230,8 +230,8 @@ class HipEntry(object):
 
 class NGCEntry(object):
   def __init__(self,row):
-    self.NGC = row[0:5]  # NGC or IC number
-    self.Type = row[6:9]  # Type
+    self.NGC = row[0:5].strip(" ")  # NGC or IC number
+    self.Type = row[6:9].strip(" ")  # Type
     self.RA = float(row[10:12])+float(row[13:17])/60.  # RA in hours
     self.DEsign = row[19]  # DE in degrees
     self.DE = float(row[20:22])+float(row[23:25])/60.  # DE in degrees
@@ -253,6 +253,68 @@ class NGCEntry(object):
 
   def getNGC(self):
     return self.NGC
+
+
+class NGCNameEntry(object):
+  def __init__(self,row):
+    self.name = row[0:35].strip(" ")  # name mapping to NGC or IC number
+    self.NGC = row[36:41].strip(" ")  # NGC or IC number
+
+  def getName(self):
+    return self.name
+
+  def getNGC(self):
+    return self.NGC
+
+class HCGEntry(object):
+  """
+  Hickson's Compact groups of Galaxies
+  N = 100
+  """
+  def __init__(self,row):
+    self.HCG = int(row[0:3])  # HCG number
+    self.RA = float(row[4:6])+float(row[6:8])/60.+float(row[8:10])/60./60.  # RA in hours (1950)
+    self.DEsign = row[10]  # DE in degrees
+    self.DE = float(row[11:13])+float(row[13:15])/60.+float(row[15:17])/60./60.  # DE in degrees (1950)
+    if self.DEsign == "-": # take into account sign of DE
+      self.DE *= -1.
+    self.RA *= 15. # convert RA from hours to degrees
+    self.Type = row[19:21]  # Type
+    self.MCount = int(row[21:23])  # Number of member galaxies
+    self.AngSize = float(row[23:28])  # AngSize in arcmin
+
+  def getRA(self):
+    result = self.RA
+    if result > 180.:
+      result -= 360.
+    return result
+
+  def getDE(self):
+    return self.DE
+
+  def getType(self):
+    return self.Type
+
+  def getHCG(self):
+    return self.HCG
+
+  def getAngSize(self):
+    return self.AngSize
+
+def makeMessierDict(ngcList,ngcNameList):
+  """
+  Dict of Messier numbers mapped to NGC entries
+
+  M40 is missing due to it being a double star
+  """
+  result  = {}
+  ngcMap = {}
+  for ngcObj in ngcList:
+    ngcMap[ngcObj.getNGC()] = ngcObj
+  for entry in ngcNameList:
+    if entry.getName()[:2] == "M " and len(entry.getNGC()) != 0:
+        result[int(entry.getName()[2:].strip(" "))] = ngcMap[entry.getNGC()]
+  return result
 
 def drawConstLines(baseMap):
   ccr = catalogCrossRef.CatalogCrossRef()
@@ -367,6 +429,11 @@ def readHip():
 def readNGC():
   return readCatalog("data/ngc2000.dat","https://cdsarc.unistra.fr/ftp/VII/118/ngc2000.dat",NGCEntry)
 
+def readNGCNames():
+  return readCatalog("data/ngc2000_names.dat","https://cdsarc.unistra.fr/ftp/VII/118/names.dat",NGCNameEntry)
+
+def readHCG():
+  return readCatalog("data/hcg_groups.dat","https://cdsarc.unistra.fr/ftp/VII/213/groups.dat",HCGEntry)
 
 class StarMapper(object):
 
@@ -405,6 +472,11 @@ class StarMapper(object):
     #print len(self.ngcOC)
     #self.ngcOC = self.ngcOC[100:150]
 
+    ngcNames = readNGCNames()
+    self.messiers = makeMessierDict(ngcObjs,ngcNames)
+
+    self.hcgObjs = readHCG()
+
   def createMap(self,basemapArgs):
     if type(basemapArgs) != dict:
       raise Exception("StarMapper.createMap requires dict argument of Basemap args")
@@ -431,6 +503,19 @@ class StarMapper(object):
     basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
   def drawNb(self,basemap,c='m'):
     mapx,mapy = basemap.project(self.ngcNb[:,0],self.ngcNb[:,1])
+    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+
+  def drawMessiers(self,basemap,c='lightcoral'):
+    messiers = [self.messiers[x] for x in self.messiers]
+    rade = [[x.getRA(),x.getDE()] for x in messiers]
+    rade = numpy.array(rade)
+    mapx,mapy = basemap.project(rade[:,0],rade[:,1])
+    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+
+  def drawHCG(self,basemap,c='y'):
+    rade = [[x.getRA(),x.getDE()] for x in self.hcgObjs]
+    rade = numpy.array(rade)
+    mapx,mapy = basemap.project(rade[:,0],rade[:,1])
     basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
 
   def drawGrid(self,basemap):
@@ -520,6 +605,8 @@ if __name__ == "__main__":
     #sm.drawGx(m)
     #sm.drawNb(m)
     #sm.drawOC(m)
+    sm.drawMessiers(m)
+    sm.drawHCG(m)
     sm.drawConsts(m)
     sm.drawGrid(m)
     cns.drawConstNames(m)
