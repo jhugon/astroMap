@@ -230,7 +230,7 @@ class HipEntry(object):
 
 class NGCEntry(object):
   def __init__(self,row):
-    self.NGC = row[0:5].strip(" ")  # NGC or IC number
+    self.NGC = row[0:5].replace(" ","")  # NGC or IC number
     self.Type = row[6:9].strip(" ")  # Type
     self.RA = float(row[10:12])+float(row[13:17])/60.  # RA in hours
     self.DEsign = row[19]  # DE in degrees
@@ -254,11 +254,10 @@ class NGCEntry(object):
   def getNGC(self):
     return self.NGC
 
-
 class NGCNameEntry(object):
   def __init__(self,row):
     self.name = row[0:35].strip(" ")  # name mapping to NGC or IC number
-    self.NGC = row[36:41].strip(" ")  # NGC or IC number
+    self.NGC = row[36:41].replace(" ","")  # NGC or IC number
 
   def getName(self):
     return self.name
@@ -301,20 +300,46 @@ class HCGEntry(object):
   def getAngSize(self):
     return self.AngSize
 
+class RADEObj:
+  def __init__(self,ra,de):
+    self.RA = float(ra)
+    self.DE = float(de)
+  def getRA(self):
+    result = self.RA
+    if result > 180.:
+      result -= 360.
+    return result
+  def getDE(self):
+    return self.DE
+
 def makeMessierDict(ngcList,ngcNameList):
   """
   Dict of Messier numbers mapped to NGC entries
 
   M40 is missing due to it being a double star
   """
-  result  = {}
+  messiers  = {}
+  caldwells = {}
   ngcMap = {}
   for ngcObj in ngcList:
     ngcMap[ngcObj.getNGC()] = ngcObj
   for entry in ngcNameList:
     if entry.getName()[:2] == "M " and len(entry.getNGC()) != 0:
-        result[int(entry.getName()[2:].strip(" "))] = ngcMap[entry.getNGC()]
-  return result
+        messiers[int(entry.getName()[2:].strip(" "))] = ngcMap[entry.getNGC()]
+  with open("data/caldwell.txt") as cfile:
+    for line in cfile:
+        caldwell = int(line[:3].strip(" "))
+        if line[4] == "!":
+            lineLst = line.split()
+            ra = lineLst[2]
+            de = lineLst[3]
+            caldwells[caldwell] = RADEObj(ra,de)
+        else:
+            ngc = line[6:-1].replace(" ","")
+            caldwell = int(line[:3].strip(" "))
+            caldwells[caldwell] = ngcMap[ngc]
+  
+  return messiers, caldwells
 
 def drawConstLines(baseMap):
   ccr = catalogCrossRef.CatalogCrossRef()
@@ -435,6 +460,9 @@ def readNGCNames():
 def readHCG():
   return readCatalog("data/hcg_groups.dat","https://cdsarc.unistra.fr/ftp/VII/213/groups.dat",HCGEntry)
 
+def readCaldwell():
+  return readCatalog("data/caldwell.txt","",CaldwellEntry)
+
 class StarMapper(object):
 
   def __init__(self):
@@ -473,7 +501,7 @@ class StarMapper(object):
     #self.ngcOC = self.ngcOC[100:150]
 
     ngcNames = readNGCNames()
-    self.messiers = makeMessierDict(ngcObjs,ngcNames)
+    self.messiers, self.caldwells = makeMessierDict(ngcObjs,ngcNames)
 
     self.hcgObjs = readHCG()
 
@@ -508,6 +536,13 @@ class StarMapper(object):
   def drawMessiers(self,basemap,c='lightcoral'):
     messiers = [self.messiers[x] for x in self.messiers]
     rade = [[x.getRA(),x.getDE()] for x in messiers]
+    rade = numpy.array(rade)
+    mapx,mapy = basemap.project(rade[:,0],rade[:,1])
+    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+
+  def drawCaldwells(self,basemap,c='red'):
+    caldwells = [self.caldwells[x] for x in self.caldwells]
+    rade = [[x.getRA(),x.getDE()] for x in caldwells]
     rade = numpy.array(rade)
     mapx,mapy = basemap.project(rade[:,0],rade[:,1])
     basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
@@ -606,6 +641,7 @@ if __name__ == "__main__":
     #sm.drawNb(m)
     #sm.drawOC(m)
     sm.drawMessiers(m)
+    sm.drawCaldwells(m)
     sm.drawHCG(m)
     sm.drawConsts(m)
     sm.drawGrid(m)
