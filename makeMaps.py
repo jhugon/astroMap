@@ -12,6 +12,8 @@ from matplotlib import rcParams
 import catalogCrossRef
 from constNames import ConstNames
 
+ngcTypeSymbols = [('C+N',"$⊡$"), ('Nb',"$□$"), ('OC',"$○$"), ('Gx',"$⬬$"), ('Pl',"$+$"), ('Gb',"$⊕$"),("","$□$")]
+
 def polarAxisWrapper(axis,projection,zeroAt=0.):
   """
   args:
@@ -544,20 +546,37 @@ class StarMapper(object):
   def drawMessiers(self,basemap,ax,c='b'):
     messier_keys = sorted(self.messiers)
     messiers = [self.messiers[x] for x in messier_keys]
+    types = [x.getType() for x in messiers]
+    types = []
+    for x in messiers:
+        try:
+            types.append(x.getType())
+        except AttributeError:
+            types.append("")
+    types = numpy.array(types)
     rade = [[x.getRA(),x.getDE()] for x in messiers]
     rade = numpy.array(rade)
     mapx,mapy = basemap.project(rade[:,0],rade[:,1])
-    basemap.scatter(mapx,mapy,s=80,marker=".",c=c,linewidths=0)
+    for t, sym in ngcTypeSymbols:
+        basemap.scatter(mapx[types==t],mapy[types==t],s=80,marker=sym,c=c,linewidths=0)
     for s, x, y in zip(messier_keys, mapx, mapy):
         ax.annotate("M"+str(s),(x,y),color=c,textcoords="offset points",xytext=(0,2),ha="center",va="bottom",fontsize=10)
 
   def drawCaldwells(self,basemap,ax,c='r'):
     caldwell_keys = sorted(self.caldwells)
     caldwells = [self.caldwells[x] for x in caldwell_keys]
+    types = []
+    for x in caldwells:
+        try:
+            types.append(x.getType())
+        except AttributeError:
+            types.append("")
+    types = numpy.array(types)
     rade = [[x.getRA(),x.getDE()] for x in caldwells]
     rade = numpy.array(rade)
     mapx,mapy = basemap.project(rade[:,0],rade[:,1])
-    basemap.scatter(mapx,mapy,s=80,marker=".",c=c,linewidths=0)
+    for t, sym in ngcTypeSymbols:
+        basemap.scatter(mapx[types==t],mapy[types==t],s=80,marker=sym,c=c,linewidths=0)
     for s, x, y in zip(caldwell_keys, mapx, mapy):
         ax.annotate("C"+str(s),(x,y),color=c,textcoords="offset points",xytext=(0,2),ha="center",va="bottom",fontsize=10)
 
