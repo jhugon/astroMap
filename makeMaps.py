@@ -9,10 +9,11 @@ from mpl_toolkits.basemap import Basemap
 import numpy as numpy
 import matplotlib.pyplot as mpl
 from matplotlib import rcParams
+import matplotlib.lines as mlines
 import catalogCrossRef
 from constNames import ConstNames
 
-ngcTypeSymbols = [('C+N',"$⊡$"), ('Nb',"$□$"), ('OC',"$○$"), ('Gx',"$⬬$"), ('Pl',"$+$"), ('Gb',"$⊕$"),("","$□$")]
+ngcTypeSymbols = [('Gx',"$⬬$","Galaxy"), ('Pl',"$+$","Planetary Nebula"), ('Nb',"$□$","Nebula"), ('C+N',"$⊡$","Cluster+Nebulosity"), ('OC',"$○$","Open Cluster"), ('Gb',"$⊕$","Globular Cluster"), ("","$∅$","Other")]
 
 def polarAxisWrapper(axis,projection,zeroAt=0.):
   """
@@ -532,16 +533,16 @@ class StarMapper(object):
 
   def drawGx(self,basemap,c='r'):
     mapx,mapy = basemap.project(self.ngcGx[:,0],self.ngcGx[:,1])
-    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    basemap.plot(mapx,mapy,color=c,marker=".",linestyle="None",markeredgewidth=0.,markersize=9)
   def drawOC(self,basemap,c='g'):
     mapx,mapy = basemap.project(self.ngcOC[:,0],self.ngcOC[:,1])
-    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    basemap.plot(mapx,mapy,color=c,marker=".",linestyle="None",markeredgewidth=0.,markersize=9)
   def drawGb(self,basemap,c='b'):
     mapx,mapy = basemap.project(self.ngcGb[:,0],self.ngcGb[:,1])
-    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    basemap.plot(mapx,mapy,color=c,marker=".",linestyle="None",markeredgewidth=0.,markersize=9)
   def drawNb(self,basemap,c='m'):
     mapx,mapy = basemap.project(self.ngcNb[:,0],self.ngcNb[:,1])
-    basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
+    basemap.plot(mapx,mapy,color=c,marker=".",linestyle="None",markeredgewidth=0.,markersize=9)
 
   def drawMessiers(self,basemap,ax,c='b'):
     messier_keys = sorted(self.messiers)
@@ -557,8 +558,8 @@ class StarMapper(object):
     rade = [[x.getRA(),x.getDE()] for x in messiers]
     rade = numpy.array(rade)
     mapx,mapy = basemap.project(rade[:,0],rade[:,1])
-    for t, sym in ngcTypeSymbols:
-        basemap.scatter(mapx[types==t],mapy[types==t],s=80,marker=sym,c=c,linewidths=0)
+    for t, sym, _ in ngcTypeSymbols:
+        basemap.plot(mapx[types==t],mapy[types==t],color=c,marker=sym,linestyle="None",markeredgewidth=0.,markersize=9)
     for s, x, y in zip(messier_keys, mapx, mapy):
         ax.annotate("M"+str(s),(x,y),color=c,textcoords="offset points",xytext=(0,2),ha="center",va="bottom",fontsize=10)
 
@@ -575,8 +576,8 @@ class StarMapper(object):
     rade = [[x.getRA(),x.getDE()] for x in caldwells]
     rade = numpy.array(rade)
     mapx,mapy = basemap.project(rade[:,0],rade[:,1])
-    for t, sym in ngcTypeSymbols:
-        basemap.scatter(mapx[types==t],mapy[types==t],s=80,marker=sym,c=c,linewidths=0)
+    for t, sym, _ in ngcTypeSymbols:
+        basemap.plot(mapx[types==t],mapy[types==t],color=c,marker=sym,linestyle="None",markeredgewidth=0.,markersize=9)
     for s, x, y in zip(caldwell_keys, mapx, mapy):
         ax.annotate("C"+str(s),(x,y),color=c,textcoords="offset points",xytext=(0,2),ha="center",va="bottom",fontsize=10)
 
@@ -585,7 +586,7 @@ class StarMapper(object):
     rade = [[x.getRA(),x.getDE()] for x in self.hcgObjs]
     rade = numpy.array(rade)
     mapx,mapy = basemap.project(rade[:,0],rade[:,1])
-    basemap.scatter(mapx,mapy,s=80,marker=".",c=c,linewidths=0)
+    basemap.plot(mapx,mapy,color=c,marker='.',linestyle="None",markeredgewidth=0.,markersize=9)
     for s, x, y in zip(hcg_nums, mapx, mapy):
         ax.annotate("HCG"+str(s),(x,y),color=c,textcoords="offset points",xytext=(0,2),ha="center",va="bottom",fontsize=10)
 
@@ -616,6 +617,17 @@ class StarMapper(object):
     yData = 23.44*numpy.sin(xData*numpy.pi/180.)
     xsToPlot, ysToPlot = basemap.project(xData,yData)
     basemap.plot(xsToPlot,ysToPlot,color=color,linestyle=linestyle,marker=marker)
+
+class DeepSkyLegend:
+
+  def __init__(self,fig):
+    self.symbols = []
+    for t, sym, title in ngcTypeSymbols:
+        self.symbols.append(mlines.Line2D([],[],color="k",marker=sym,linestyle="None",markeredgewidth=0.,markersize=10,label=title))
+    self.colors = []
+    for c, title in [("b","Messier Objects"), ("r","Caldwell Objects"), ("g","Hickson Compact Groups (of Galaxies)")]:
+        self.colors.append(mlines.Line2D([],[],color=c,marker="$●$",linestyle="None",markeredgewidth=0.,markersize=10,label=title))
+    self.legend = fig.legend(handles=self.symbols+self.colors,loc="upper right")
 
 if __name__ == "__main__":
 
@@ -825,6 +837,8 @@ if __name__ == "__main__":
     sm.drawOC(mOC,c='k')
     sm.drawGb(mGb,c='k')
     sm.drawGx(mGx,c='k')
+
+  DeepSkyLegend(fig)
 
   fig.savefig('map.png')
   fig.savefig('map.pdf')
