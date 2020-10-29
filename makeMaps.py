@@ -541,25 +541,34 @@ class StarMapper(object):
     mapx,mapy = basemap.project(self.ngcNb[:,0],self.ngcNb[:,1])
     basemap.scatter(mapx,mapy,marker=".",c=c,linewidths=0)
 
-  def drawMessiers(self,basemap,c='b'):
-    messiers = [self.messiers[x] for x in self.messiers]
+  def drawMessiers(self,basemap,ax,c='b'):
+    messier_keys = sorted(self.messiers)
+    messiers = [self.messiers[x] for x in messier_keys]
     rade = [[x.getRA(),x.getDE()] for x in messiers]
     rade = numpy.array(rade)
     mapx,mapy = basemap.project(rade[:,0],rade[:,1])
     basemap.scatter(mapx,mapy,s=80,marker=".",c=c,linewidths=0)
+    for s, x, y in zip(messier_keys, mapx, mapy):
+        ax.annotate("M"+str(s),(x,y),color=c,textcoords="offset points",xytext=(0,2),ha="center",va="bottom",fontsize=10)
 
-  def drawCaldwells(self,basemap,c='r'):
-    caldwells = [self.caldwells[x] for x in self.caldwells]
+  def drawCaldwells(self,basemap,ax,c='r'):
+    caldwell_keys = sorted(self.caldwells)
+    caldwells = [self.caldwells[x] for x in caldwell_keys]
     rade = [[x.getRA(),x.getDE()] for x in caldwells]
     rade = numpy.array(rade)
     mapx,mapy = basemap.project(rade[:,0],rade[:,1])
     basemap.scatter(mapx,mapy,s=80,marker=".",c=c,linewidths=0)
+    for s, x, y in zip(caldwell_keys, mapx, mapy):
+        ax.annotate("C"+str(s),(x,y),color=c,textcoords="offset points",xytext=(0,2),ha="center",va="bottom",fontsize=10)
 
-  def drawHCG(self,basemap,c='g'):
+  def drawHCG(self,basemap,ax,c='g'):
+    hcg_nums = [x.getHCG() for x in self.hcgObjs]
     rade = [[x.getRA(),x.getDE()] for x in self.hcgObjs]
     rade = numpy.array(rade)
     mapx,mapy = basemap.project(rade[:,0],rade[:,1])
     basemap.scatter(mapx,mapy,s=80,marker=".",c=c,linewidths=0)
+    for s, x, y in zip(hcg_nums, mapx, mapy):
+        ax.annotate("HCG"+str(s),(x,y),color=c,textcoords="offset points",xytext=(0,2),ha="center",va="bottom",fontsize=10)
 
   def drawGrid(self,basemap,label=True,color="0.85"):
     if isinstance(basemap,Basemap):
@@ -671,7 +680,8 @@ if __name__ == "__main__":
   polarAxisWrapper(axSP,"spaeqd",zeroAt=90.)
 
   maps = [mMain,axNP,axSP]
-  for m in maps:
+  axes = [axMain,axNP,axSP]
+  for m,ax in zip(maps,axes):
     sm.drawGrid(m)
     sm.drawEcliptic(m)
     sm.drawConsts(m)
@@ -680,9 +690,9 @@ if __name__ == "__main__":
     #sm.drawGx(m)
     #sm.drawNb(m)
     #sm.drawOC(m)
-    sm.drawMessiers(m)
-    sm.drawCaldwells(m)
-    sm.drawHCG(m)
+    sm.drawMessiers(m,ax)
+    sm.drawCaldwells(m,ax)
+    sm.drawHCG(m,ax)
     #sm.drawStars(m)
 
   fig.text(0.93,0.335,"Midnight\nZenith Month",size="small",ha="center",va="center")
