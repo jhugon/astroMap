@@ -627,7 +627,13 @@ class DeepSkyLegend:
     self.colors = []
     for c, title in [("b","Messier Objects"), ("r","Caldwell Objects"), ("g","Hickson Compact Groups (of Galaxies)")]:
         self.colors.append(mlines.Line2D([],[],color=c,marker="$●$",linestyle="None",markeredgewidth=0.,markersize=10,label=title))
-    self.legend = fig.legend(handles=self.symbols+self.colors,loc="upper right")
+
+    axloc_pos = [0.75,0.75,0.20,0.1]
+    loc = "upper right"
+    self.legend = fig.legend(handles=self.symbols,title="Deep Sky Object Types",loc=loc,bbox_to_anchor=axloc_pos,mode="expand")
+    axloc_pos = [0.75,0.85,0.20,0.1]
+    loc = "upper right"
+    self.legend2 = fig.legend(handles=self.colors,title="Deep Sky Catalogs",loc=loc,bbox_to_anchor=axloc_pos,mode="expand")
 
 if __name__ == "__main__":
 
@@ -755,10 +761,10 @@ if __name__ == "__main__":
     axOC = fig.add_axes([0.05,0.03,0.2,0.08]) # left, bottom, width, height in fraction of fig
     axNb = fig.add_axes([0.05,0.13,0.2,0.08]) # left, bottom, width, height in fraction of fig
 
-    fig.text(0.85,0.11,"Globular Clusters",ha="center",va="bottom",size="large")
-    fig.text(0.85,0.21,"Galaxies",ha="center",va="bottom",size="large")
-    fig.text(0.15,0.11,"Open Clusters",ha="center",va="bottom",size="large")
-    fig.text(0.15,0.21,"Nebulae",ha="center",va="bottom",size="large")
+    fig.text(0.85,0.11,"NGC Globular Clusters",ha="center",va="bottom",size="large",fontweight="bold")
+    fig.text(0.85,0.21,"NGC Galaxies",ha="center",va="bottom",size="large",fontweight="bold")
+    fig.text(0.15,0.11,"NGC Open Clusters",ha="center",va="bottom",size="large",fontweight="bold")
+    fig.text(0.15,0.21,"NGC Nebulae",ha="center",va="bottom",size="large",fontweight="bold")
 
     if useRobinson:
         mNb = sm.createMap({
@@ -839,6 +845,8 @@ if __name__ == "__main__":
     sm.drawGx(mGx,c='k')
 
   DeepSkyLegend(fig)
+  fig.text(0.05,0.95,"Map of Constellations \n& Deep Sky Objects",ha="left",va="top",size=60,fontweight="bold")
+  fig.text(0.05,0.90,"Justin Hugon",ha="left",va="top",size="large",fontweight="bold")
 
   fig.savefig('map.png')
   fig.savefig('map.pdf')
